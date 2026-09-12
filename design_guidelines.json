@@ -1,0 +1,135 @@
+{
+  "project_name": "Spelling Bee Champion - Year 7-12 Practice Web App",
+  "target_audience": "Year 7-12 Students (Ages 12-18). Scholarly, competitive, sleek, gamified academic arena. Avoid cartoonish/kindergarten visual tropes. Emphasize collegiate prep, spelling tournament prestige, and high-energy word mastery.",
+  "theme_strategy": {
+    "default_mode": "dark",
+    "supported_modes": ["dark", "light"],
+    "archetype": "The Academic Arena & Golden Hive (High-contrast slate black with Amber Gold highlights and Emerald/Indigo status triggers)"
+  },
+  "typography": {
+    "heading_font": "Outfit, sans-serif",
+    "body_font": "Plus Jakarta Sans, sans-serif",
+    "monospace_font": "JetBrains Mono, monospace",
+    "hierarchy": {
+      "h1_hero": "text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight",
+      "h2_section": "text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight",
+      "h3_card": "text-xl sm:text-2xl font-semibold tracking-normal",
+      "h4_widget": "text-lg font-medium",
+      "spelling_input": "font-mono text-2xl sm:text-3xl tracking-widest text-center",
+      "body": "text-base leading-relaxed text-slate-300 dark:text-slate-300 light:text-slate-700",
+      "label_caps": "text-xs font-bold uppercase tracking-[0.2em] text-amber-500"
+    }
+  },
+  "colors": {
+    "brand_amber": {
+      "50": "#FFFBEB",
+      "100": "#FEF3C7",
+      "400": "#FBBF24",
+      "500": "#F59E0B",
+      "600": "#D97706",
+      "700": "#B45309"
+    },
+    "slate_dark": {
+      "background": "#090D16",
+      "surface": "#111827",
+      "surface_elevated": "#1F2937",
+      "border": "#374151"
+    },
+    "status": {
+      "correct_emerald": "#10B981",
+      "correct_bg": "rgba(16, 185, 129, 0.15)",
+      "incorrect_crimson": "#EF4444",
+      "incorrect_bg": "rgba(239, 68, 68, 0.15)",
+      "test_mode_indigo": "#6366F1",
+      "streak_fire_orange": "#F97316"
+    }
+  },
+  "spacing_and_layout": {
+    "container_padding": "px-4 sm:px-8 lg:px-12 py-6",
+    "grid_modes": {
+      "dashboard_bento": "grid grid-cols-1 md:grid-cols-8 lg:grid-cols-12 gap-6",
+      "practice_stage": "max-w-4xl mx-auto flex flex-col gap-6",
+      "analytics_grid": "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+    },
+    "bento_spans": {
+      "hero_card": "col-span-full md:col-span-8 lg:col-span-8",
+      "quick_stats": "col-span-full md:col-span-4 lg:col-span-4",
+      "mode_selector": "col-span-full md:col-span-8 lg:col-span-8",
+      "daily_streak": "col-span-full md:col-span-4 lg:col-span-4"
+    }
+  },
+  "key_views_and_components": {
+    "dashboard_view": {
+      "description": "Main hub showing championship title, level badge, quick start CTA, active streak, stats breakdown, difficulty selector, and mode selector.",
+      "components": [
+        "Header Navigation with Logo, Mode Toggle, Volume Quick-Control, Settings Icon",
+        "Hero Practice Banner with 'Start Championship Practice' primary CTA",
+        "Stat Widgets: Words Completed, Current Streak (Fire animation), Accuracy %, Average Time",
+        "Difficulty Cards: Easy (Yr 7-8), Medium (Yr 9-10), Hard (Yr 11-12), Extreme (National Bee)",
+        "Practice Mode Grid: Classic, 10 Words, 25 Words, Endless, Challenge, Test Mode",
+        "Recent Missed Words Quick-Drill Widget"
+      ]
+    },
+    "practice_screen": {
+      "description": "Stadium-like focused interface for spelling practice with TTS controls, letter input, and hint access.",
+      "components": [
+        "Stage Header with Progress Bar (e.g., Word 4 of 10), Live Score, Timer (for Challenge/Test Mode)",
+        "Audio Controller Card with oversized 'Play Word' pulse button, Speed Selectors (Slow 0.75x, Normal 1.0x, Fast 1.25x), 'Repeat Word' button",
+        "Sentence & Context Drawer: 'Use in a sentence' button with audio playback",
+        "Spelling Text Input: Monospace typography, character count, auto-focus, Submit button with Enter key support",
+        "Word Info Side/Bottom Panel: Definition, Part of Speech, Language of Origin / Etymology, IPA Phonetics",
+        "Feedback Overlay Card: Animated Success with confetti or Error diff view comparing user attempt vs correct spelling"
+      ]
+    },
+    "results_screen": {
+      "description": "Comprehensive tournament scorecard showing final accuracy, streak summary, missed word review, and retry actions.",
+      "components": [
+        "Score Summary Header with Grade Badge (e.g., S Tier / Master Wordsmith)",
+        "Accuracy Circular Progress Meter & Speed Analytics",
+        "Missed Words Table with Audio Replay buttons, Phonetic breakdowns, and 'Practice Missed Words' CTA",
+        "Share / Export Score Card"
+      ]
+    },
+    "progress_analytics_screen": {
+      "description": "Detailed statistics page tracking performance trends, difficulty breakdowns, and mastery curves.",
+      "components": [
+        "Accuracy Over Time Line Chart",
+        "Mastery by Word Length & Difficulty Bar Charts",
+        "Category Breakdown (Greek origins, Latin roots, French loanwords)",
+        "Spelling History Log with Search & Filter"
+      ]
+    },
+    "settings_screen": {
+      "description": "Customization portal for speech engine, UI theme, audio speed, auto-advance, and keyboard bindings.",
+      "components": [
+        "SpeechSynthesis Voice Dropdown & Pitch/Rate Sliders with 'Test Voice' preview button",
+        "Dark / Light / High Contrast Theme Selectors",
+        "Audio Effect Toggles & Sound Volume Slider",
+        "Keyboard Shortcuts Cheatsheet (Space = Play audio, Enter = Submit, Tab = Sentence hint)"
+      ]
+    }
+  },
+  "micro_interactions_and_motion": {
+    "audio_pulse": "Continuous glowing ring animation around Play Word button during audio playback",
+    "input_shake": "Subtle red horizontal shake animation on incorrect spelling submission",
+    "success_glow": "Green emerald border flash and micro confetti burst on correct spelling",
+    "streak_flame": "Animated flame flicker icon when streak exceeds 3 consecutive correct words",
+    "card_hover": "Hover lift -translate-y-1 with amber border glow transition"
+  },
+  "testing_and_accessibility": {
+    "data_testid_rules": "ALL interactive buttons, inputs, tabs, audio controls, stat cards, and text feedback elements MUST include unique kebab-case data-testid attributes (e.g. data-testid='play-word-button', data-testid='spelling-input', data-testid='submit-spelling-button', data-testid='difficulty-extreme-card', data-testid='mode-test-mode-card').",
+    "accessibility_standards": "Text inputs MUST have clear visual focus rings, aria-labels for TTS audio buttons, shortcut key legends, and WCAG AA contrast for dark slate backgrounds."
+  },
+  "image_urls": {
+    "student_studying_laptop_1": "https://images.unsplash.com/photo-1515378960530-7c0da6231fb1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTZ8MHwxfHNlYXJjaHxf|||student_studying",
+    "student_studying_laptop_2": "https://images.unsplash.com/photo-1491975474562-1f4e30bc9468?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTZ8MHwxfHNlYXJjaHxf|||student_library"
+  },
+  "instructions_to_main_agent": [
+    "Build a single-page React app with seamless tabbed/view navigation (Dashboard, Practice, Results, Progress, Settings).",
+    "Utilize Web Speech API (window.speechSynthesis) for TTS audio playback with robust fallback text or mock audio notification if browser TTS is unavailable.",
+    "Implement comprehensive word bank categorized into Year 7-8 (Easy), Year 9-10 (Medium), Year 11-12 (Hard), and Scripps National Level (Extreme). Include definitions, parts of speech, origin, IPA, and sentence context for every word.",
+    "Support practice modes: Classic (infinite), 10 Words, 25 Words, Endless (3 lives), Challenge (timed 15s per word), Test Mode (single audio play, no hints, timed exam setup).",
+    "Include local storage persistence for user streak, total words completed, accuracy statistics, custom drill list, and settings preferences.",
+    "Ensure all buttons, inputs, audio triggers, and stat displays feature clear data-testid attributes for automated testing."
+  ]
+}

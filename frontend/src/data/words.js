@@ -2,11 +2,34 @@
 // (see git history / scripts/out/base.json) and enriched with syllables, origin, tips, misspellings,
 // categories and spelling patterns. Expanded entries are generated once and shipped statically.
 import WORD_DATA from "./words.json";
+import { JUNIOR_WORDS } from "./juniorWords";
 
-export const WORDS = WORD_DATA;
+const ORIGINAL_BY_WORD = new Map(
+  WORD_DATA.map((word) => [word.word.toLowerCase(), word])
+);
 
+// Junior entries win the school-level classification, but keep any richer metadata that
+// already exists in the original bee database. Everything is de-duplicated by spelling.
+const juniorKeys = new Set(JUNIOR_WORDS.map((word) => word.word.toLowerCase()));
+const enrichedJunior = JUNIOR_WORDS.map((word) => ({
+  ...(ORIGINAL_BY_WORD.get(word.word.toLowerCase()) || {}),
+  ...word,
+}));
+
+export const WORDS = [
+  ...enrichedJunior,
+  ...WORD_DATA.filter((word) => !juniorKeys.has(word.word.toLowerCase())),
+];
+
+export const SCHOOL_LEVEL_IDS = ["grade4", "grade5", "grade6", "year7"];
+export const BEE_LEVEL_IDS = ["easy", "medium", "hard", "extreme"];
+export const ALL_LEVEL_IDS = [...SCHOOL_LEVEL_IDS, ...BEE_LEVEL_IDS];
 
 export const WORDS_BY_DIFFICULTY = {
+  grade4: WORDS.filter((w) => w.difficulty === "grade4"),
+  grade5: WORDS.filter((w) => w.difficulty === "grade5"),
+  grade6: WORDS.filter((w) => w.difficulty === "grade6"),
+  year7: WORDS.filter((w) => w.difficulty === "year7"),
   easy: WORDS.filter((w) => w.difficulty === "easy"),
   medium: WORDS.filter((w) => w.difficulty === "medium"),
   hard: WORDS.filter((w) => w.difficulty === "hard"),
@@ -14,15 +37,19 @@ export const WORDS_BY_DIFFICULTY = {
 };
 
 export const DIFFICULTY_META = {
-  easy: { label: "Easy", subtitle: "Year 7–8", color: "emerald" },
-  medium: { label: "Medium", subtitle: "Year 9–10", color: "sky" },
-  hard: { label: "Hard", subtitle: "Year 11–12", color: "amber" },
-  extreme: { label: "Extreme", subtitle: "National Bee", color: "rose" },
+  grade4: { label: "Grade 4", subtitle: "Foundation", color: "emerald", group: "school" },
+  grade5: { label: "Grade 5", subtitle: "Building", color: "teal", group: "school" },
+  grade6: { label: "Grade 6", subtitle: "Growing", color: "cyan", group: "school" },
+  year7: { label: "Year 7", subtitle: "Secondary", color: "sky", group: "school" },
+  easy: { label: "Easy Bee", subtitle: "Year 7–8+", color: "indigo", group: "bee" },
+  medium: { label: "Medium", subtitle: "Year 9–10", color: "violet", group: "bee" },
+  hard: { label: "Hard", subtitle: "Year 11–12", color: "amber", group: "bee" },
+  extreme: { label: "Extreme", subtitle: "National Bee", color: "rose", group: "bee" },
 };
 
 export const WORD_MAP = new Map(WORDS.map((w) => [w.word.toLowerCase(), w]));
 
-export const CATEGORIES = ["Science", "Literature", "Geography", "Animals", "Technology", "Medicine", "History", "Everyday English", "Academic", "Competition"];
+export const CATEGORIES = ["Science", "Literature", "Geography", "Animals", "Technology", "Medicine", "History", "Everyday English", "Academic", "Competition", "Civics"];
 
 export const PATTERN_META = {
   "double-consonant": "Double consonants",

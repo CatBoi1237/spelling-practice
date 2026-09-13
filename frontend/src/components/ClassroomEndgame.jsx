@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Brain, Gauge, Target, TrendingUp, Trophy, Zap } from "lucide-react";
+import { ArrowRight, Brain, Target, TrendingUp, Trophy, Zap } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { api } from "@/lib/api";
@@ -195,12 +195,6 @@ export default function ClassroomEndgame() {
           New classroom <ArrowRight className="h-4 w-4" />
         </button>
       </section>
-
-      <style>{`
-        .classroom-shell .classroom-endgame + * [data-classroom-finished="true"] {
-          display: none !important;
-        }
-      `}</style>
     </div>
   );
 }

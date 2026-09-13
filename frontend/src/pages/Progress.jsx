@@ -91,8 +91,8 @@ export default function Progress() {
           id === "grade6" ? "G6" :
           id === "year7" ? "Y7" :
           id === "medium" ? "Med" :
-          id === "extreme" ? "Extr" :
-          difficulty: difficultyLabel(id),
+          id === "extreme" ? "Extr" : id,
+        difficulty: difficultyLabel(id),
         correct: byDifficulty[id] || 0,
       }))
       .filter((item) => item.correct > 0 || history.some((session) => session.difficulty === item.id));

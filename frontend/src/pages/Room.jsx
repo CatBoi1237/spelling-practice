@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Copy, Crown, Loader2, Play, RotateCcw, Share2, Users } from "lucide-react";
+import { CheckCircle2, Copy, Crown, Loader2, Play, RotateCcw, Share2, Users, XCircle } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 import { getPlayerId, getPlayerName } from "@/lib/identity";
 import { pickSeededWords } from "@/lib/seeded";
@@ -19,6 +19,7 @@ export default function Room() {
   const [error, setError] = useState("");
   const [index, setIndex] = useState(0);
   const [myResults, setMyResults] = useState([]);
+  const [readyBusy, setReadyBusy] = useState(false);
   const joinedRef = useRef(false);
   const previousSeedRef = useRef(null);
 
@@ -53,7 +54,7 @@ export default function Room() {
   }, [roomCode]);
 
   useEffect(() => {
-    const t = setInterval(refresh, 2000);
+    const t = setInterval(refresh, 1500);
     return () => clearInterval(t);
   }, [refresh]);
 
@@ -78,6 +79,23 @@ export default function Room() {
 
   const me = room?.players?.find((p) => p.player_id === playerId);
   const isHost = room?.host_id === playerId;
+  const readyCount = room?.players?.filter((p) => p.ready).length || 0;
+  const allReady = !!room?.players?.length && readyCount === room.players.length;
+
+  const setReady = async (ready) => {
+    setReadyBusy(true);
+    try {
+      const { data } = await api.post(`/rooms/${roomCode}/ready`, {
+        player_id: playerId,
+        ready,
+      });
+      setRoom(data);
+    } catch (e) {
+      toast.error(apiError(e, "Could not update ready status."));
+    } finally {
+      setReadyBusy(false);
+    }
+  };
 
   const start = async () => {
     try {
@@ -97,7 +115,7 @@ export default function Room() {
       setIndex(0);
       setMyResults([]);
       setRoom(data);
-      toast.success("Rematch ready!");
+      toast.success("Rematch lobby ready — everyone needs to ready up again.");
     } catch (e) {
       toast.error(apiError(e, "Could not start a rematch."));
     }
@@ -217,25 +235,54 @@ export default function Room() {
 
         {room.status === "lobby" && (
           <div data-testid="room-lobby" className="rounded-3xl border border-slate-800 bg-slate-900/40 p-6 sm:p-8">
-            <h2 className="flex items-center gap-2 font-heading text-2xl font-bold text-slate-100">
-              <Users className="h-5 w-5 text-amber-400" /> Waiting room
-            </h2>
-            <p className="mt-3 text-sm text-slate-400">
-              Share the code above. Everyone gets the exact same words, so it is a fair race.
-            </p>
-            {isHost ? (
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h2 className="flex items-center gap-2 font-heading text-2xl font-bold text-slate-100">
+                  <Users className="h-5 w-5 text-amber-400" /> Waiting room
+                </h2>
+                <p className="mt-3 text-sm text-slate-400">
+                  Share the code above. Everyone must ready up before the host can start.
+                </p>
+              </div>
+              <div className={cn(
+                "rounded-xl border px-4 py-2 text-sm font-bold",
+                allReady ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-slate-800 bg-slate-950/60 text-slate-300"
+              )}>
+                {readyCount}/{room.players.length} ready
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
               <button
-                data-testid="start-race-button"
-                onClick={start}
-                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-amber-500 px-6 py-3 font-semibold text-slate-950 shadow-lg shadow-amber-500/20 transition hover:-translate-y-0.5 hover:bg-amber-400"
+                data-testid="toggle-ready-button"
+                onClick={() => setReady(!me?.ready)}
+                disabled={readyBusy}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-xl px-6 py-3 font-semibold transition disabled:opacity-50",
+                  me?.ready
+                    ? "border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+                    : "bg-amber-500 text-slate-950 hover:bg-amber-400"
+                )}
               >
-                <Play className="h-4 w-4" /> Start race
+                {me?.ready ? <XCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                {me?.ready ? "Not ready" : "I'm ready"}
               </button>
-            ) : (
-              <p data-testid="waiting-for-host" className="mt-6 inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950/60 px-5 py-3 text-sm text-slate-300">
-                <Loader2 className="h-4 w-4 animate-spin" /> Waiting for the host to start…
-              </p>
-            )}
+
+              {isHost ? (
+                <button
+                  data-testid="start-race-button"
+                  onClick={start}
+                  disabled={!allReady}
+                  className="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-6 py-3 font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:-translate-y-0.5 hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Play className="h-4 w-4" /> Start race
+                </button>
+              ) : (
+                <p data-testid="waiting-for-host" className="inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950/60 px-5 py-3 text-sm text-slate-300">
+                  <Loader2 className="h-4 w-4 animate-spin" /> {allReady ? "Everyone's ready — waiting for host…" : "Waiting for everyone to ready up…"}
+                </p>
+              )}
+            </div>
           </div>
         )}
 
@@ -314,6 +361,7 @@ export default function Room() {
       <aside className="lg:col-span-1">
         <div className="sticky top-24 rounded-3xl border border-slate-800 bg-slate-900/40 p-5">
           <h3 className="font-heading text-lg font-bold text-slate-100">{room.status === "finished" ? "🏆 Final results" : room.status === "running" ? "Race progress" : "Players"}</h3>
+          {room.status === "lobby" && <p className="mt-1 text-xs text-slate-500">{readyCount}/{room.players.length} ready</p>}
           {room.status === "running" && <p className="mt-1 text-xs text-slate-500">Scores are hidden until everyone finishes.</p>}
           <div data-testid="room-leaderboard" className="mt-4 space-y-2">
             {(room.status === "running" ? [...room.players].sort((a, b) => b.answered - a.answered || a.name.localeCompare(b.name)) : room.players).map((p, i) => (
@@ -336,8 +384,12 @@ export default function Room() {
                     <span className="font-mono text-slate-100">{p.score}/{room.word_count}</span>
                     <span className="w-10 text-right text-[10px] text-slate-500">{Math.round((p.total_time_ms || 0) / 1000)}s</span>
                   </>
+                ) : room.status === "lobby" ? (
+                  <span className={cn("text-[10px] font-bold uppercase", p.ready ? "text-emerald-400" : "text-slate-500")}>
+                    {p.ready ? "ready" : "not ready"}
+                  </span>
                 ) : (
-                  <span className="text-[10px] text-slate-500">{p.done ? "finished" : room.status === "lobby" ? "ready" : `${p.answered}/${room.word_count}`}</span>
+                  <span className="text-[10px] text-slate-500">{p.done ? "finished" : `${p.answered}/${room.word_count}`}</span>
                 )}
               </div>
             ))}

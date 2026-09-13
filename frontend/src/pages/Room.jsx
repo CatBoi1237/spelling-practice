@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Copy, Crown, Loader2, Play, Share2, Users } from "lucide-react";
+import { Copy, Crown, Loader2, Play, RotateCcw, Share2, Users } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 import { getPlayerId, getPlayerName } from "@/lib/identity";
 import { pickSeededWords } from "@/lib/seeded";
@@ -20,6 +20,7 @@ export default function Room() {
   const [index, setIndex] = useState(0);
   const [myResults, setMyResults] = useState([]);
   const joinedRef = useRef(false);
+  const previousSeedRef = useRef(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -61,6 +62,20 @@ export default function Room() {
     [room?.seed, room?.word_count, room?.difficulty] // eslint-disable-line react-hooks/exhaustive-deps
   );
 
+  useEffect(() => {
+    if (!room?.seed) return;
+
+    if (
+      previousSeedRef.current !== null &&
+      previousSeedRef.current !== room.seed
+    ) {
+      setIndex(0);
+      setMyResults([]);
+    }
+
+    previousSeedRef.current = room.seed;
+  }, [room?.seed]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const me = room?.players?.find((p) => p.player_id === playerId);
   const isHost = room?.host_id === playerId;
 
@@ -70,6 +85,21 @@ export default function Room() {
       setRoom(data);
     } catch (e) {
       toast.error(apiError(e, "Could not start the race."));
+    }
+  };
+
+  const rematch = async () => {
+    try {
+      const { data } = await api.post(`/rooms/${roomCode}/rematch`, {
+        player_id: playerId,
+      });
+
+      setIndex(0);
+      setMyResults([]);
+      setRoom(data);
+      toast.success("Rematch ready!");
+    } catch (e) {
+      toast.error(apiError(e, "Could not start a rematch."));
     }
   };
 
@@ -249,6 +279,26 @@ export default function Room() {
               >
                 <Copy className="h-4 w-4" /> Share result
               </button>
+              {room.status === "finished" && isHost && (
+                <button
+                  data-testid="rematch-button"
+                  onClick={rematch}
+                  className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-5 py-3 text-sm font-semibold text-amber-300 transition hover:bg-amber-500/20"
+                >
+                  <RotateCcw className="h-4 w-4" /> Rematch
+                </button>
+              )}
+
+              {room.status === "finished" && !isHost && (
+                <span
+                  data-testid="waiting-for-rematch"
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/60 px-5 py-3 text-sm text-slate-300"
+                >
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Waiting for host to start a rematch…
+                </span>
+              )}
+
               <Link
                 to="/multiplayer"
                 data-testid="new-race-link"

@@ -466,6 +466,49 @@ async def room_finish(code: str, body: RoomActionBody, user: Optional[dict] = De
     return sanitize_room(room)
 
 
+
+@api_router.post("/rooms/{code}/rematch")
+async def room_rematch(code: str, body: RoomActionBody, user: Optional[dict] = Depends(get_optional_user)):
+    code = code.upper()
+    room = await db.rooms.find_one({"code": code})
+
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    pid = str(user["_id"]) if user else body.player_id
+
+    if room["host_id"] != pid:
+        raise HTTPException(status_code=403, detail="Only the host can start a rematch")
+
+    if room.get("status") != "finished":
+        raise HTTPException(status_code=400, detail="The race must be finished before starting a rematch")
+
+    reset_players = []
+    for player in room.get("players", []):
+        updated_player = dict(player)
+        updated_player.update({
+            "score": 0,
+            "answered": 0,
+            "total_time_ms": 0,
+            "done": False,
+            "finished_at": None,
+        })
+        reset_players.append(updated_player)
+
+    await db.rooms.update_one(
+        {"code": code},
+        {"$set": {
+            "seed": random.randint(1, 2_000_000_000),
+            "status": "lobby",
+            "started_at": None,
+            "players": reset_players,
+        }},
+    )
+
+    room = await db.rooms.find_one({"code": code}, {"_id": 0})
+    return sanitize_room(room)
+
+
 # ---------------- session scores + global leaderboards ----------------
 class ScoreBody(BaseModel):
     player_id: str

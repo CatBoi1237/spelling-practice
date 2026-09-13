@@ -98,16 +98,34 @@ export default function Room() {
     }
   };
 
-  const copyInvite = async () => {
-    const text = `🐝 Spell-race me! Room ${roomCode} — ${window.location.origin}/room/${roomCode}`;
+  const inviteUrl = `${window.location.origin}/room/${roomCode}`;
+  const inviteText = `🐝 Spell-race me! Room ${roomCode}`;
+
+  const copyInviteLink = async () => {
     try {
-      if (navigator.share) await navigator.share({ text });
-      else {
-        await navigator.clipboard.writeText(text);
-        toast.success("Invite copied!");
-      }
+      await navigator.clipboard.writeText(inviteUrl);
+      toast.success("Invite link copied!");
     } catch {
-      toast.error("Could not copy the invite.");
+      toast.error("Could not copy the invite link.");
+    }
+  };
+
+  const shareInvite = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "SpellBee Race",
+          text: inviteText,
+          url: inviteUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(inviteUrl);
+        toast.success("Sharing isn't available here, so the link was copied!");
+      }
+    } catch (e) {
+      if (e?.name !== "AbortError") {
+        toast.error("Could not share the invite.");
+      }
     }
   };
 
@@ -147,13 +165,23 @@ export default function Room() {
                 <span data-testid="room-status" className="capitalize">{room.status}</span>
               </p>
             </div>
-            <button
-              data-testid="copy-invite-button"
-              onClick={copyInvite}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/60 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:border-amber-500/40 hover:text-amber-300"
-            >
-              <Share2 className="h-4 w-4" /> Invite friends
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                data-testid="copy-invite-button"
+                onClick={copyInviteLink}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/60 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:border-amber-500/40 hover:text-amber-300"
+              >
+                <Copy className="h-4 w-4" /> Copy invite link
+              </button>
+
+              <button
+                data-testid="share-invite-button"
+                onClick={shareInvite}
+                className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-400"
+              >
+                <Share2 className="h-4 w-4" /> Share
+              </button>
+            </div>
           </div>
         </header>
 

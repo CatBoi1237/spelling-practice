@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Sun, Moon, Monitor, Settings as SettingsIcon, BarChart3, Home as HomeIcon, CalendarDays, LogIn, LogOut,
-  Target, Trophy, Users, Library, Medal, GraduationCap, MoreHorizontal, X, ListChecks,
+  Target, Trophy, Users, Library, Medal, GraduationCap, MoreHorizontal, X, ListChecks, ScanLine,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
@@ -15,6 +15,7 @@ export const NAV = [
   { to: "/daily", label: "Daily Challenge", short: "Daily", icon: CalendarDays, testId: "nav-daily" },
   { to: "/leaderboards", label: "Leaderboards", icon: Trophy, testId: "nav-leaderboards" },
   { to: "/multiplayer", label: "Multiplayer", icon: Users, testId: "nav-multiplayer" },
+  { to: "/join", label: "Join Game", short: "Join", icon: ScanLine, testId: "nav-join" },
   { to: "/word-lists", label: "My Word Lists", short: "Word Lists", icon: ListChecks, testId: "nav-word-lists" },
   { to: "/library", label: "Word Library", icon: Library, testId: "nav-library" },
   { to: "/learn", label: "Learn", icon: GraduationCap, testId: "nav-learn" },
@@ -125,6 +126,9 @@ export default function Layout() {
             >
               <Icon className="h-4 w-4 shrink-0" />
               {label}
+              {to === "/join" && (
+                <span className="ml-auto rounded-full border border-indigo-500/20 bg-indigo-500/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-indigo-300">Code</span>
+              )}
               {to === "/word-lists" && (
                 <span className="ml-auto rounded-full border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-amber-300">New</span>
               )}
@@ -167,7 +171,7 @@ export default function Layout() {
           aria-label="Mobile"
         >
           <div className="flex items-stretch justify-around">
-            {NAV.filter((n) => MOBILE_PRIMARY.includes(n.to)).map(({ to, label, short, icon: Icon, testId }) => (
+            {NAV.filter((nav) => MOBILE_PRIMARY.includes(nav.to)).map(({ to, label, short, icon: Icon, testId }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -196,7 +200,7 @@ export default function Layout() {
         <div className="fixed inset-0 z-30 lg:hidden" onClick={() => setMoreOpen(false)}>
           <div className="absolute inset-0 bg-slate-950/60" />
           <div data-testid="mobile-more-sheet" className="absolute inset-x-3 bottom-20 grid grid-cols-3 gap-2 rounded-2xl border border-slate-800 bg-slate-900 p-3 shadow-2xl" onClick={(event) => event.stopPropagation()}>
-            {NAV.filter((n) => !MOBILE_PRIMARY.includes(n.to)).map(({ to, label, short, icon: Icon, testId }) => (
+            {NAV.filter((nav) => !MOBILE_PRIMARY.includes(nav.to)).map(({ to, label, short, icon: Icon, testId }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -209,6 +213,7 @@ export default function Layout() {
               >
                 <Icon className="h-5 w-5" />
                 {short || label}
+                {to === "/join" && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-indigo-400" />}
                 {to === "/word-lists" && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-amber-400" />}
               </NavLink>
             ))}

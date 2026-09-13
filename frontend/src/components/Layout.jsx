@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
-  Sun, Moon, Monitor, Settings as SettingsIcon, BarChart3, Home as HomeIcon, CalendarDays, Swords, LogIn, LogOut,
-  Target, Trophy, Users, Library, Medal, GraduationCap, MoreHorizontal, X,
+  Sun, Moon, Monitor, Settings as SettingsIcon, BarChart3, Home as HomeIcon, CalendarDays, LogIn, LogOut,
+  Target, Trophy, Users, Library, Medal, GraduationCap, MoreHorizontal, X, ListChecks,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
@@ -15,6 +15,7 @@ export const NAV = [
   { to: "/daily", label: "Daily Challenge", short: "Daily", icon: CalendarDays, testId: "nav-daily" },
   { to: "/leaderboards", label: "Leaderboards", icon: Trophy, testId: "nav-leaderboards" },
   { to: "/multiplayer", label: "Multiplayer", icon: Users, testId: "nav-multiplayer" },
+  { to: "/word-lists", label: "My Word Lists", short: "Word Lists", icon: ListChecks, testId: "nav-word-lists" },
   { to: "/library", label: "Word Library", icon: Library, testId: "nav-library" },
   { to: "/learn", label: "Learn", icon: GraduationCap, testId: "nav-learn" },
   { to: "/progress", label: "Progress", icon: BarChart3, testId: "nav-progress" },
@@ -105,14 +106,11 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
-      {/* Desktop sidebar */}
       <aside
         data-testid="sidebar"
         className="honeycomb fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-slate-800 bg-slate-950/90 backdrop-blur-xl lg:flex"
       >
-        <div className="px-5 pb-4 pt-6">
-          <Brand />
-        </div>
+        <div className="px-5 pb-4 pt-6"><Brand /></div>
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2" aria-label="Main">
           {NAV.map(({ to, label, icon: Icon, testId }) => (
             <NavLink
@@ -120,29 +118,27 @@ export default function Layout() {
               to={to}
               data-testid={testId}
               end={to === "/"}
-              className={({ isActive }) =>
-                cn(
-                  "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors",
-                  isActive ? "bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/30" : "text-slate-400 hover:bg-slate-900 hover:text-slate-100"
-                )
-              }
+              className={({ isActive }) => cn(
+                "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors",
+                isActive ? "bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/30" : "text-slate-400 hover:bg-slate-900 hover:text-slate-100"
+              )}
             >
               <Icon className="h-4 w-4 shrink-0" />
               {label}
+              {to === "/word-lists" && (
+                <span className="ml-auto rounded-full border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-amber-300">New</span>
+              )}
             </NavLink>
           ))}
         </nav>
         <div className="space-y-2 border-t border-slate-800 p-3">
           <div className="flex items-center gap-2">
-            <div className="min-w-0 flex-1">
-              <AccountChip />
-            </div>
+            <div className="min-w-0 flex-1"><AccountChip /></div>
             <ThemeButton />
           </div>
         </div>
       </aside>
 
-      {/* Mobile top bar */}
       <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/85 backdrop-blur-xl lg:hidden">
         <div className="flex items-center justify-between px-4 py-2.5">
           <Brand />
@@ -158,13 +154,11 @@ export default function Layout() {
           You're offline — practice still works. Daily, multiplayer and leaderboards will reconnect automatically.
         </div>
       )}
+
       <main className={cn("mx-auto w-full max-w-7xl px-4 pb-28 pt-6 sm:px-8 sm:pt-10 lg:pb-12 lg:pl-72 lg:pr-10", focusMode && "pb-8")}>
-        <div key={location.pathname} className="page-enter">
-          <Outlet />
-        </div>
+        <div key={location.pathname} className="page-enter"><Outlet /></div>
       </main>
 
-      {/* Mobile bottom nav */}
       {!focusMode && (
         <nav
           data-testid="mobile-nav"
@@ -180,9 +174,7 @@ export default function Layout() {
                 data-testid={`${testId}-mobile`}
                 end={to === "/"}
                 onClick={() => setMoreOpen(false)}
-                className={({ isActive }) =>
-                  cn("flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-semibold", isActive ? "text-amber-400" : "text-slate-400")
-                }
+                className={({ isActive }) => cn("flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-semibold", isActive ? "text-amber-400" : "text-slate-400")}
               >
                 <Icon className="h-5 w-5" />
                 {short || label}
@@ -190,7 +182,7 @@ export default function Layout() {
             ))}
             <button
               data-testid="nav-more-mobile"
-              onClick={() => setMoreOpen((o) => !o)}
+              onClick={() => setMoreOpen((open) => !open)}
               className={cn("flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-semibold", moreOpen ? "text-amber-400" : "text-slate-400")}
             >
               {moreOpen ? <X className="h-5 w-5" /> : <MoreHorizontal className="h-5 w-5" />}
@@ -203,19 +195,21 @@ export default function Layout() {
       {moreOpen && (
         <div className="fixed inset-0 z-30 lg:hidden" onClick={() => setMoreOpen(false)}>
           <div className="absolute inset-0 bg-slate-950/60" />
-          <div data-testid="mobile-more-sheet" className="absolute inset-x-3 bottom-20 grid grid-cols-3 gap-2 rounded-2xl border border-slate-800 bg-slate-900 p-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div data-testid="mobile-more-sheet" className="absolute inset-x-3 bottom-20 grid grid-cols-3 gap-2 rounded-2xl border border-slate-800 bg-slate-900 p-3 shadow-2xl" onClick={(event) => event.stopPropagation()}>
             {NAV.filter((n) => !MOBILE_PRIMARY.includes(n.to)).map(({ to, label, short, icon: Icon, testId }) => (
               <NavLink
                 key={to}
                 to={to}
                 data-testid={`${testId}-more`}
                 onClick={() => setMoreOpen(false)}
-                className={({ isActive }) =>
-                  cn("flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 text-center text-[11px] font-semibold", isActive ? "bg-amber-500/15 text-amber-300" : "text-slate-300 hover:bg-slate-800")
-                }
+                className={({ isActive }) => cn(
+                  "relative flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 text-center text-[11px] font-semibold",
+                  isActive ? "bg-amber-500/15 text-amber-300" : "text-slate-300 hover:bg-slate-800"
+                )}
               >
                 <Icon className="h-5 w-5" />
                 {short || label}
+                {to === "/word-lists" && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-amber-400" />}
               </NavLink>
             ))}
           </div>

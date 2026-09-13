@@ -1,88 +1,607 @@
-from fastapi import FastAPI, APIRouter
 from dotenv import load_dotenv
-from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
-import os
-import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List
-import uuid
-from datetime import datetime, timezone
-
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
+import os
+import json
+import jwt
+import bcrypt
+import random
+import string
+import logging
+from datetime import datetime, timezone, timedelta, date as date_cls
+from typing import List, Optional
+
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends
+from starlette.middleware.cors import CORSMiddleware
+from motor.motor_asyncio import AsyncIOMotorClient
+from bson import ObjectId
+from pydantic import BaseModel, EmailStr, Field
+
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Create the main app without a prefix
 app = FastAPI()
-
-# Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
+JWT_ALGORITHM = "HS256"
+EPOCH = date_cls(2026, 1, 1)
+DAILY_WORD_COUNT = 5
 
-# Define Models
-class StatusCheck(BaseModel):
-    model_config = ConfigDict(extra="ignore")  # Ignore MongoDB's _id field
-    
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-class StatusCheckCreate(BaseModel):
-    client_name: str
 
-# Add your routes to the router instead of directly to app
+# ---------------- auth helpers ----------------
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(plain: str, hashed: str) -> bool:
+    try:
+        return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+    except ValueError:
+        return False
+
+
+def get_jwt_secret() -> str:
+    return os.environ["JWT_SECRET"]
+
+
+def create_access_token(user_id: str, email: str) -> str:
+    payload = {
+        "sub": user_id,
+        "email": email,
+        "exp": datetime.now(timezone.utc) + timedelta(days=7),
+        "type": "access",
+    }
+    return jwt.encode(payload, get_jwt_secret(), algorithm=JWT_ALGORITHM)
+
+
+def set_auth_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        key="access_token", value=token, httponly=True, secure=True,
+        samesite="lax", max_age=604800, path="/",
+    )
+
+
+def extract_token(request: Request) -> Optional[str]:
+    token = request.cookies.get("access_token")
+    if not token:
+        header = request.headers.get("Authorization", "")
+        if header.startswith("Bearer "):
+            token = header[7:]
+    return token or None
+
+
+def public_user(user: dict) -> dict:
+    return {"id": str(user["_id"]), "email": user["email"], "name": user.get("name") or user["email"].split("@")[0]}
+
+
+async def get_optional_user(request: Request) -> Optional[dict]:
+    token = extract_token(request)
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, get_jwt_secret(), algorithms=[JWT_ALGORITHM])
+        if payload.get("type") != "access":
+            return None
+        user = await db.users.find_one({"_id": ObjectId(payload["sub"])})
+        return user
+    except (jwt.InvalidTokenError, Exception):
+        return None
+
+
+async def get_current_user(request: Request) -> dict:
+    user = await get_optional_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return user
+
+
+# ---------------- models ----------------
+class RegisterBody(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=6)
+    name: Optional[str] = None
+
+
+class LoginBody(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class DailySubmitBody(BaseModel):
+    player_id: str
+    name: str = Field(min_length=1, max_length=24)
+    date: str
+    results: List[bool]
+    time_ms: int = 0
+
+
+class RoomCreateBody(BaseModel):
+    player_id: str
+    name: str = Field(min_length=1, max_length=24)
+    word_count: int = 10
+    difficulty: str = "medium"
+
+
+class RoomJoinBody(BaseModel):
+    player_id: str
+    name: str = Field(min_length=1, max_length=24)
+
+
+class RoomProgressBody(BaseModel):
+    player_id: str
+    correct: bool
+    time_ms: int = 0
+
+
+class RoomActionBody(BaseModel):
+    player_id: str
+
+
+# ---------------- auth routes ----------------
+@api_router.post("/auth/register")
+async def register(body: RegisterBody, response: Response):
+    email = body.email.lower().strip()
+    if await db.users.find_one({"email": email}):
+        raise HTTPException(status_code=400, detail="An account with this email already exists")
+    doc = {
+        "email": email,
+        "password_hash": hash_password(body.password),
+        "name": (body.name or email.split("@")[0]).strip()[:24],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    res = await db.users.insert_one(doc)
+    doc["_id"] = res.inserted_id
+    token = create_access_token(str(res.inserted_id), email)
+    set_auth_cookie(response, token)
+    return {"user": public_user(doc), "token": token}
+
+
+@api_router.post("/auth/login")
+async def login(body: LoginBody, request: Request, response: Response):
+    email = body.email.lower().strip()
+    ip = request.client.host if request.client else "unknown"
+    identifier = f"{ip}:{email}"
+    now = datetime.now(timezone.utc)
+
+    attempt = await db.login_attempts.find_one({"identifier": identifier})
+    if attempt and attempt.get("count", 0) >= 5:
+        locked_until = datetime.fromisoformat(attempt["last_at"]) + timedelta(minutes=15)
+        if now < locked_until:
+            raise HTTPException(status_code=429, detail="Too many failed attempts. Try again in 15 minutes.")
+
+    user = await db.users.find_one({"email": email})
+    if not user or not verify_password(body.password, user["password_hash"]):
+        await db.login_attempts.update_one(
+            {"identifier": identifier},
+            {"$inc": {"count": 1}, "$set": {"last_at": now.isoformat()}},
+            upsert=True,
+        )
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    await db.login_attempts.delete_one({"identifier": identifier})
+    token = create_access_token(str(user["_id"]), email)
+    set_auth_cookie(response, token)
+    return {"user": public_user(user), "token": token}
+
+
+@api_router.post("/auth/logout")
+async def logout(response: Response):
+    response.delete_cookie("access_token", path="/")
+    return {"ok": True}
+
+
+@api_router.get("/auth/me")
+async def me(user: dict = Depends(get_current_user)):
+    return {"user": public_user(user)}
+
+
+# ---------------- daily challenge ----------------
+def today_utc() -> str:
+    return datetime.now(timezone.utc).date().isoformat()
+
+
+def puzzle_number(date_str: str) -> int:
+    return (date_cls.fromisoformat(date_str) - EPOCH).days + 1
+
+
+def daily_seed(date_str: str) -> int:
+    h = 2166136261
+    for ch in date_str:
+        h ^= ord(ch)
+        h = (h * 16777619) & 0xFFFFFFFF
+    return h
+
+
+@api_router.get("/daily/today")
+async def daily_today():
+    d = today_utc()
+    return {
+        "date": d,
+        "puzzle_number": puzzle_number(d),
+        "seed": daily_seed(d),
+        "word_count": DAILY_WORD_COUNT,
+    }
+
+
+def compute_streak(dates: List[str], today: str) -> int:
+    s = set(dates)
+    cursor = date_cls.fromisoformat(today)
+    if cursor.isoformat() not in s:
+        cursor = cursor - timedelta(days=1)
+        if cursor.isoformat() not in s:
+            return 0
+    streak = 0
+    while cursor.isoformat() in s:
+        streak += 1
+        cursor = cursor - timedelta(days=1)
+    return streak
+
+
+@api_router.get("/daily/status")
+async def daily_status(player_id: str, date: Optional[str] = None, user: Optional[dict] = Depends(get_optional_user)):
+    d = date or today_utc()
+    pid = str(user["_id"]) if user else player_id
+    entry = await db.daily_results.find_one({"player_id": pid, "date": d}, {"_id": 0})
+    rows = await db.daily_results.find({"player_id": pid}, {"_id": 0, "date": 1}).to_list(400)
+    return {
+        "date": d,
+        "puzzle_number": puzzle_number(d),
+        "played": entry is not None,
+        "entry": entry,
+        "streak": compute_streak([r["date"] for r in rows], today_utc()),
+    }
+
+
+@api_router.post("/daily/submit")
+async def daily_submit(body: DailySubmitBody, user: Optional[dict] = Depends(get_optional_user)):
+    d = today_utc()
+    if body.date != d:
+        raise HTTPException(status_code=400, detail="This challenge has expired. Refresh for today's puzzle.")
+    if len(body.results) != DAILY_WORD_COUNT:
+        raise HTTPException(status_code=400, detail="Invalid submission")
+
+    pid = str(user["_id"]) if user else body.player_id
+    name = (public_user(user)["name"] if user else body.name).strip()[:24]
+
+    existing = await db.daily_results.find_one({"player_id": pid, "date": d}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=409, detail="You have already played today's challenge")
+
+    doc = {
+        "player_id": pid,
+        "user_id": str(user["_id"]) if user else None,
+        "name": name,
+        "date": d,
+        "puzzle_number": puzzle_number(d),
+        "results": body.results,
+        "score": sum(1 for r in body.results if r),
+        "total": DAILY_WORD_COUNT,
+        "time_ms": max(0, body.time_ms),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.daily_results.insert_one(doc)
+    doc.pop("_id", None)
+
+    rows = await db.daily_results.find({"player_id": pid}, {"_id": 0, "date": 1}).to_list(400)
+    streak = compute_streak([r["date"] for r in rows], d)
+    await db.daily_results.update_one({"player_id": pid, "date": d}, {"$set": {"streak": streak}})
+    doc["streak"] = streak
+
+    rank_ahead = await db.daily_results.count_documents({
+        "date": d,
+        "$or": [
+            {"score": {"$gt": doc["score"]}},
+            {"score": doc["score"], "time_ms": {"$lt": doc["time_ms"]}},
+        ],
+    })
+    total_players = await db.daily_results.count_documents({"date": d})
+    return {"entry": doc, "rank": rank_ahead + 1, "total_players": total_players}
+
+
+@api_router.get("/daily/leaderboard")
+async def daily_leaderboard(date: Optional[str] = None, limit: int = 50):
+    d = date or today_utc()
+    rows = await db.daily_results.find(
+        {"date": d}, {"_id": 0, "player_id": 1, "name": 1, "score": 1, "total": 1, "time_ms": 1, "streak": 1, "user_id": 1}
+    ).sort([("score", -1), ("time_ms", 1)]).to_list(max(1, min(limit, 100)))
+    for i, r in enumerate(rows):
+        r["rank"] = i + 1
+        r["registered"] = bool(r.pop("user_id", None))
+    return {"date": d, "puzzle_number": puzzle_number(d), "entries": rows}
+
+
+# ---------------- multiplayer rooms ----------------
+def new_code() -> str:
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    return "".join(random.choice(alphabet) for _ in range(6))
+
+
+def sanitize_room(room: dict) -> dict:
+    players = sorted(
+        room.get("players", []),
+        key=lambda p: (-p.get("score", 0), p.get("answered", 0) and -p.get("answered", 0), p.get("total_time_ms", 0)),
+    )
+    return {
+        "code": room["code"],
+        "seed": room["seed"],
+        "word_count": room["word_count"],
+        "difficulty": room["difficulty"],
+        "status": room["status"],
+        "host_id": room["host_id"],
+        "created_at": room["created_at"],
+        "started_at": room.get("started_at"),
+        "players": players,
+    }
+
+
+@api_router.post("/rooms")
+async def create_room(body: RoomCreateBody, user: Optional[dict] = Depends(get_optional_user)):
+    if body.word_count not in (5, 10, 15, 25):
+        raise HTTPException(status_code=400, detail="word_count must be 5, 10, 15 or 25")
+    if body.difficulty not in ("easy", "medium", "hard", "extreme", "mixed"):
+        raise HTTPException(status_code=400, detail="Invalid difficulty")
+
+    pid = str(user["_id"]) if user else body.player_id
+    name = (public_user(user)["name"] if user else body.name).strip()[:24]
+
+    code = new_code()
+    while await db.rooms.find_one({"code": code}):
+        code = new_code()
+
+    room = {
+        "code": code,
+        "seed": random.randint(1, 2_000_000_000),
+        "word_count": body.word_count,
+        "difficulty": body.difficulty,
+        "status": "lobby",
+        "host_id": pid,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "started_at": None,
+        "players": [{
+            "player_id": pid, "name": name, "registered": bool(user),
+            "score": 0, "answered": 0, "total_time_ms": 0, "done": False, "finished_at": None,
+        }],
+    }
+    await db.rooms.insert_one(room)
+    room.pop("_id", None)
+    return sanitize_room(room)
+
+
+@api_router.get("/rooms/{code}")
+async def get_room(code: str):
+    room = await db.rooms.find_one({"code": code.upper()}, {"_id": 0})
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    return sanitize_room(room)
+
+
+@api_router.post("/rooms/{code}/join")
+async def join_room(code: str, body: RoomJoinBody, user: Optional[dict] = Depends(get_optional_user)):
+    code = code.upper()
+    room = await db.rooms.find_one({"code": code})
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    pid = str(user["_id"]) if user else body.player_id
+    name = (public_user(user)["name"] if user else body.name).strip()[:24]
+
+    if any(p["player_id"] == pid for p in room.get("players", [])):
+        await db.rooms.update_one({"code": code, "players.player_id": pid}, {"$set": {"players.$.name": name}})
+    else:
+        if room["status"] != "lobby":
+            raise HTTPException(status_code=400, detail="This race has already started")
+        if len(room.get("players", [])) >= 12:
+            raise HTTPException(status_code=400, detail="This room is full")
+        await db.rooms.update_one({"code": code}, {"$push": {"players": {
+            "player_id": pid, "name": name, "registered": bool(user),
+            "score": 0, "answered": 0, "total_time_ms": 0, "done": False, "finished_at": None,
+        }}})
+
+    room = await db.rooms.find_one({"code": code}, {"_id": 0})
+    return sanitize_room(room)
+
+
+@api_router.post("/rooms/{code}/start")
+async def start_room(code: str, body: RoomActionBody, user: Optional[dict] = Depends(get_optional_user)):
+    code = code.upper()
+    room = await db.rooms.find_one({"code": code})
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    pid = str(user["_id"]) if user else body.player_id
+    if room["host_id"] != pid:
+        raise HTTPException(status_code=403, detail="Only the host can start the race")
+    await db.rooms.update_one({"code": code}, {"$set": {
+        "status": "running", "started_at": datetime.now(timezone.utc).isoformat(),
+    }})
+    room = await db.rooms.find_one({"code": code}, {"_id": 0})
+    return sanitize_room(room)
+
+
+@api_router.post("/rooms/{code}/progress")
+async def room_progress(code: str, body: RoomProgressBody, user: Optional[dict] = Depends(get_optional_user)):
+    code = code.upper()
+    pid = str(user["_id"]) if user else body.player_id
+    room = await db.rooms.find_one({"code": code})
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    player = next((p for p in room.get("players", []) if p["player_id"] == pid), None)
+    if not player:
+        raise HTTPException(status_code=403, detail="You are not in this room")
+    if player.get("answered", 0) >= room["word_count"]:
+        return sanitize_room(room)
+    await db.rooms.update_one(
+        {"code": code, "players.player_id": pid},
+        {"$inc": {
+            "players.$.score": 1 if body.correct else 0,
+            "players.$.answered": 1,
+            "players.$.total_time_ms": max(0, body.time_ms),
+        }},
+    )
+    room = await db.rooms.find_one({"code": code}, {"_id": 0})
+    return sanitize_room(room)
+
+
+@api_router.post("/rooms/{code}/finish")
+async def room_finish(code: str, body: RoomActionBody, user: Optional[dict] = Depends(get_optional_user)):
+    code = code.upper()
+    pid = str(user["_id"]) if user else body.player_id
+    await db.rooms.update_one(
+        {"code": code, "players.player_id": pid},
+        {"$set": {"players.$.done": True, "players.$.finished_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    room = await db.rooms.find_one({"code": code})
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    if room.get("players") and all(p.get("done") for p in room["players"]):
+        await db.rooms.update_one({"code": code}, {"$set": {"status": "finished"}})
+        room = await db.rooms.find_one({"code": code}, {"_id": 0})
+    room.pop("_id", None)
+    return sanitize_room(room)
+
+
+# ---------------- session scores + global leaderboards ----------------
+class ScoreBody(BaseModel):
+    player_id: str
+    name: str = Field(min_length=1, max_length=24)
+    mode: str
+    difficulty: str
+    correct: int = Field(ge=0, le=200)
+    total: int = Field(ge=1, le=200)
+    points: int = Field(ge=0, le=60000)
+    best_streak: int = Field(ge=0, le=200)
+    avg_time_ms: int = Field(ge=0)
+    duration_ms: int = Field(ge=0)
+    mastered: int = Field(ge=0, le=5000)
+
+
+@api_router.post("/scores")
+async def submit_score(body: ScoreBody, user: Optional[dict] = Depends(get_optional_user)):
+    if body.correct > body.total or body.points > body.total * 300 or body.best_streak > body.total:
+        raise HTTPException(status_code=400, detail="Invalid score")
+    if body.total >= 5 and (body.avg_time_ms < 400 or body.duration_ms < body.avg_time_ms * body.total * 0.5):
+        raise HTTPException(status_code=400, detail="Invalid score")
+    pid = str(user["_id"]) if user else body.player_id
+    name = (public_user(user)["name"] if user else body.name).strip()[:24]
+    doc = {
+        **body.model_dump(),
+        "player_id": pid,
+        "name": name,
+        "registered": bool(user),
+        "accuracy": round(body.correct / body.total * 100),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.scores.insert_one(doc)
+    doc.pop("_id", None)
+    return {"ok": True, "entry": doc}
+
+
+PERIOD_DAYS = {"daily": 1, "weekly": 7, "monthly": 30, "all": None}
+METRICS = {
+    "score": ("points", -1, None),
+    "streak": ("best_streak", -1, None),
+    "accuracy": ("accuracy", -1, {"total": {"$gte": 10}}),
+    "fastest": ("duration_ms", 1, {"mode": "test", "correct": {"$gte": 8}}),
+    "mastered": ("mastered", -1, None),
+}
+
+
+@api_router.get("/leaderboards")
+async def leaderboards(period: str = "weekly", metric: str = "score", player_id: Optional[str] = None, limit: int = 25):
+    if period not in PERIOD_DAYS or metric not in METRICS:
+        raise HTTPException(status_code=400, detail="Invalid period or metric")
+    field, direction, extra = METRICS[metric]
+    match = dict(extra or {})
+    days = PERIOD_DAYS[period]
+    if days:
+        match["created_at"] = {"$gte": (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()}
+    pipeline = [
+        {"$match": match},
+        {"$sort": {field: direction, "created_at": 1}},
+        {"$group": {"_id": "$player_id", "name": {"$first": "$name"}, "registered": {"$first": "$registered"}, "value": {"$first": f"${field}"},
+                    "mode": {"$first": "$mode"}, "difficulty": {"$first": "$difficulty"}, "accuracy": {"$first": "$accuracy"}, "total": {"$first": "$total"}}},
+        {"$sort": {"value": direction, "name": 1}},
+        {"$limit": max(1, min(limit, 100))},
+    ]
+    rows = await db.scores.aggregate(pipeline).to_list(100)
+    entries = []
+    for i, r in enumerate(rows):
+        entries.append({"rank": i + 1, "player_id": r["_id"], "name": r["name"], "registered": bool(r.get("registered")), "value": r["value"],
+                        "mode": r.get("mode"), "difficulty": r.get("difficulty"), "accuracy": r.get("accuracy"), "total": r.get("total")})
+    me = next((e for e in entries if e["player_id"] == player_id), None) if player_id else None
+    total_players = len(await db.scores.distinct("player_id", match)) if match else len(await db.scores.distinct("player_id"))
+    return {"period": period, "metric": metric, "entries": entries, "me": me, "total_players": total_players}
+
+
+# ---------------- cloud sync (signed-in users) ----------------
+class SyncBody(BaseModel):
+    data: dict
+    updated_at: str
+
+
+@api_router.get("/sync")
+async def get_sync(user: dict = Depends(get_current_user)):
+    doc = await db.sync.find_one({"user_id": str(user["_id"])}, {"_id": 0})
+    return doc or {"user_id": str(user["_id"]), "data": None, "updated_at": None}
+
+
+@api_router.put("/sync")
+async def put_sync(body: SyncBody, user: dict = Depends(get_current_user)):
+    if len(json.dumps(body.data)) > 2_000_000:
+        raise HTTPException(status_code=413, detail="Progress payload too large")
+    doc = {"user_id": str(user["_id"]), "data": body.data, "updated_at": body.updated_at, "saved_at": datetime.now(timezone.utc).isoformat()}
+    await db.sync.replace_one({"user_id": doc["user_id"]}, doc, upsert=True)
+    return {"ok": True, "updated_at": body.updated_at}
+
+
 @api_router.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "Spelling Bee API"}
 
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.model_dump()
-    status_obj = StatusCheck(**status_dict)
-    
-    # Convert to dict and serialize datetime to ISO string for MongoDB
-    doc = status_obj.model_dump()
-    doc['timestamp'] = doc['timestamp'].isoformat()
-    
-    _ = await db.status_checks.insert_one(doc)
-    return status_obj
 
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    # Exclude MongoDB's _id field from the query results
-    status_checks = await db.status_checks.find({}, {"_id": 0}).to_list(1000)
-    
-    # Convert ISO string timestamps back to datetime objects
-    for check in status_checks:
-        if isinstance(check['timestamp'], str):
-            check['timestamp'] = datetime.fromisoformat(check['timestamp'])
-    
-    return status_checks
-
-# Include the router in the main app
 app.include_router(api_router)
 
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_origins=[o for o in os.environ.get('CORS_ORIGINS', '*').split(',') if o],
+    allow_origin_regex=r"https?://.*",
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+
+@app.on_event("startup")
+async def startup():
+    await db.users.create_index("email", unique=True)
+    await db.daily_results.create_index([("player_id", 1), ("date", 1)], unique=True)
+    await db.daily_results.create_index([("date", 1), ("score", -1), ("time_ms", 1)])
+    await db.rooms.create_index("code", unique=True)
+    await db.login_attempts.create_index("identifier")
+    await db.scores.create_index([("created_at", -1)])
+    await db.scores.create_index([("player_id", 1), ("created_at", -1)])
+    await db.sync.create_index("user_id", unique=True)
+
+    demo_email = os.environ.get("DEMO_EMAIL")
+    demo_password = os.environ.get("DEMO_PASSWORD")
+    if demo_email and demo_password:
+        existing = await db.users.find_one({"email": demo_email})
+        if not existing:
+            await db.users.insert_one({
+                "email": demo_email,
+                "password_hash": hash_password(demo_password),
+                "name": "Demo Speller",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            })
+        elif not verify_password(demo_password, existing["password_hash"]):
+            await db.users.update_one({"email": demo_email}, {"$set": {"password_hash": hash_password(demo_password)}})
+
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

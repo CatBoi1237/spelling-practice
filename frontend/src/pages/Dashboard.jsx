@@ -1,210 +1,193 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Flame, Target, Trophy, Zap, ArrowRight, GraduationCap, Award, Timer, Infinity as InfinityIcon, Layers, ClipboardList, BookOpen } from "lucide-react";
-import { DIFFICULTY_META, MODES } from "@/data/words";
+import { useMemo } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { Flame, Target, Trophy, ArrowRight, CalendarDays, Users, Gauge, Repeat, BookOpenCheck, Medal } from "lucide-react";
+import { DIFFICULTY_META } from "@/data/words";
 import { useApp } from "@/context/AppContext";
-import { getMissed } from "@/lib/storage";
+import { useAuth } from "@/context/AuthContext";
+import { getMissed, getHistory, countMastered, getDailyLocal } from "@/lib/storage";
+import { computeSkill, recommendDifficulty, levelTitle, weakPattern } from "@/lib/skill";
+import { achievementProgress } from "@/lib/achievements";
+import { PATTERN_META } from "@/data/words";
+import { BeeMascot } from "@/components/BeeMascot";
+import { StatCard, SectionHeader, PrimaryButton, GhostButton, Eyebrow } from "@/components/ui-bits";
 import { cn } from "@/lib/utils";
 
-const modeIcons = {
-  classic: Layers,
-  ten: Target,
-  twentyfive: ClipboardList,
-  endless: InfinityIcon,
-  challenge: Zap,
-  test: Timer,
-};
-
-const difficultyStyle = {
-  easy: "from-emerald-500/20 to-emerald-500/5 ring-emerald-500/40 text-emerald-300",
-  medium: "from-sky-500/20 to-sky-500/5 ring-sky-500/40 text-sky-300",
-  hard: "from-amber-500/25 to-amber-500/5 ring-amber-500/40 text-amber-300",
-  extreme: "from-rose-500/25 to-rose-500/5 ring-rose-500/40 text-rose-300",
-};
-
 export default function Dashboard() {
-  const { stats, settings, updateSettings } = useApp();
-  const [difficulty, setDifficulty] = useState(settings.preferredDifficulty || "medium");
+  const { stats, settings } = useApp();
+  const { user, playerName } = useAuth();
   const navigate = useNavigate();
 
-  const accuracy = stats.totalAttempted
-    ? Math.round((stats.totalCorrect / stats.totalAttempted) * 100)
-    : 0;
+  const history = useMemo(() => getHistory(), []);
+  const missed = useMemo(() => getMissed().slice(0, 5), []);
+  const mastered = useMemo(() => countMastered(), []);
+  const daily = useMemo(() => getDailyLocal(), []);
+  const level = useMemo(() => computeSkill(history, stats), [history, stats]);
+  const rec = useMemo(() => recommendDifficulty(history, settings.preferredDifficulty || "medium"), [history, settings.preferredDifficulty]);
+  const weak = useMemo(() => weakPattern(), []);
+  const achievements = useMemo(() => achievementProgress(stats), [stats]);
+  const unlockedCount = achievements.filter((a) => a.unlockedAt).length;
 
-  const missed = useMemo(() => getMissed().slice(0, 6), []);
+  const accuracy = stats.totalAttempted ? Math.round((stats.totalCorrect / stats.totalAttempted) * 100) : null;
+  const firstTime = stats.totalAttempted === 0;
+  const todayDone = daily.completed?.includes(new Date().toISOString().slice(0, 10));
 
-  const start = (mode) => {
-    updateSettings({ preferredDifficulty: difficulty });
-    navigate(`/practice?mode=${mode}&difficulty=${difficulty}`);
+  const go = (mode, extra = {}) => {
+    const q = new URLSearchParams({ mode, difficulty: rec.difficulty, ...extra });
+    navigate(`/practice?${q}`);
   };
 
   return (
     <div className="space-y-10">
       {/* Hero */}
-      <section className="grid gap-6 md:grid-cols-12">
-        <div
-          data-testid="hero-card"
-          className="relative col-span-12 overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-slate-900 to-slate-950 p-8 md:col-span-8 md:p-12"
-        >
+      <section className="grid gap-4 lg:grid-cols-12">
+        <div data-testid="hero-card" className="honeycomb-hero relative col-span-12 overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-slate-900 to-slate-950 p-8 lg:col-span-8 lg:p-12">
           <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-amber-500/10 blur-3xl" />
-          <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-amber-500/5 blur-3xl" />
-          <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-amber-300">
-            <GraduationCap className="h-3 w-3" />
-            Year 7–12 · Bee Trainer
-          </span>
-          <h1 className="mt-6 font-heading text-4xl font-black leading-[1.05] tracking-tight text-slate-50 sm:text-5xl lg:text-6xl">
-            Master every word.
-            <br />
-            <span className="text-amber-400">One spelling at a time.</span>
-          </h1>
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-slate-400">
-            Listen. Type. Learn. Train your ear and your keyboard against hundreds of carefully picked words — from everyday vocabulary to national-bee stumpers.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <button
-              data-testid="start-practice-button"
-              onClick={() => start("classic")}
-              className="group inline-flex items-center gap-2 rounded-xl bg-amber-500 px-6 py-3 font-semibold text-slate-950 shadow-lg shadow-amber-500/20 transition hover:-translate-y-0.5 hover:bg-amber-400"
-            >
-              Start Practice
-              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-            </button>
-            <button
-              data-testid="start-test-mode-button"
-              onClick={() => start("test")}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/60 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:border-amber-500/40 hover:text-amber-300"
-            >
-              <Timer className="h-4 w-4" /> Test Mode
-            </button>
+          <div className="relative flex flex-col gap-8 sm:flex-row sm:items-center">
+            <div className="flex-1">
+              <Eyebrow>{firstTime ? "Welcome" : `Welcome back, ${user?.name || playerName}`}</Eyebrow>
+              <h1 className="mt-4 font-heading text-4xl font-black leading-[1.02] tracking-tight text-slate-50 sm:text-5xl lg:text-6xl">
+                Listen.<br />Spell.<br /><span className="text-amber-400">Master.</span>
+              </h1>
+              <p className="mt-4 max-w-md text-base leading-relaxed text-slate-400">
+                {firstTime ? "Ready to test your spelling? Hear a word, type it, and learn from every miss." : "Ready to test your spelling? Your next round is tuned to your level."}
+              </p>
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                <PrimaryButton data-testid="start-practice-button" onClick={() => go("classic")}>
+                  Start Practice <ArrowRight className="h-4 w-4" />
+                </PrimaryButton>
+                <GhostButton data-testid="hero-daily-button" onClick={() => navigate("/daily")}>
+                  <CalendarDays className="h-4 w-4" /> {todayDone ? "Daily done ✓" : "Daily Challenge"}
+                </GhostButton>
+              </div>
+            </div>
+            <BeeMascot size={150} mood={accuracy != null && accuracy >= 80 ? "happy" : "idle"} className="mx-auto shrink-0 drop-shadow-2xl sm:mx-0" />
           </div>
         </div>
 
-        {/* Quick stat card */}
-        <div
-          data-testid="quick-stats-card"
-          className="col-span-12 grid grid-cols-2 gap-3 rounded-3xl border border-slate-800 bg-slate-900/40 p-5 md:col-span-4"
-        >
-          <StatBox testId="stat-streak" icon={Flame} label="Current Streak" value={stats.currentStreak} suffix={stats.currentStreak > 3 ? "🔥" : ""} accent="text-orange-300" />
-          <StatBox testId="stat-best" icon={Trophy} label="Best Streak" value={stats.bestStreak} accent="text-amber-300" />
-          <StatBox testId="stat-completed" icon={Award} label="Words Done" value={stats.wordsCompleted} accent="text-emerald-300" />
-          <StatBox testId="stat-accuracy" icon={Target} label="Accuracy" value={`${accuracy}%`} accent="text-sky-300" />
+        <div data-testid="quick-stats-card" className="stagger col-span-12 grid grid-cols-2 gap-3 lg:col-span-4">
+          <StatCard testId="stat-daily-streak" icon={Flame} label="Daily streak" value={`${daily.streak || 0}`} sub={daily.streak ? "days in a row" : "play today to start"} accent="text-orange-300" />
+          <StatCard testId="stat-accuracy" icon={Target} label="Accuracy" value={accuracy == null ? "—" : `${accuracy}%`} sub={accuracy == null ? "no words yet" : `${stats.totalAttempted} attempted`} accent="text-sky-300" />
+          <StatCard testId="stat-mastered" icon={BookOpenCheck} label="Words mastered" value={mastered} sub="3 correct in a row" accent="text-emerald-300" />
+          <StatCard testId="stat-level" icon={Gauge} label="Spelling level" value={level == null ? "—" : `${level.toFixed(1)}`} sub={level == null ? "10 words to unlock" : `${levelTitle(level)} · /10`} accent="text-amber-300" />
         </div>
       </section>
 
-      {/* Difficulty */}
-      <section>
-        <SectionHeader eyebrow="Step 1" title="Pick a difficulty" />
-        <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-          {Object.entries(DIFFICULTY_META).map(([id, meta]) => {
-            const active = difficulty === id;
-            return (
-              <button
-                key={id}
-                data-testid={`difficulty-${id}-card`}
-                onClick={() => setDifficulty(id)}
-                className={cn(
-                  "group relative overflow-hidden rounded-2xl border p-5 text-left transition",
-                  active
-                    ? "border-amber-500/60 bg-amber-500/10 ring-2 ring-amber-500/40"
-                    : "border-slate-800 bg-slate-900/40 hover:border-slate-700 hover:bg-slate-900"
-                )}
-              >
-                <div className={cn("mb-4 inline-flex rounded-lg bg-gradient-to-br p-2 ring-1", difficultyStyle[id])}>
-                  <BookOpen className="h-4 w-4" />
-                </div>
-                <div className="font-heading text-xl font-bold text-slate-100">{meta.label}</div>
-                <div className="mt-1 text-xs uppercase tracking-widest text-slate-500">{meta.subtitle}</div>
-                {active && (
-                  <span className="absolute right-3 top-3 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-slate-950">Selected</span>
-                )}
-              </button>
-            );
-          })}
+      {/* Continue + Daily */}
+      <section className="grid gap-4 md:grid-cols-2">
+        <div data-testid="recommended-card" className="rounded-3xl border border-slate-800 bg-slate-900/40 p-6">
+          <Eyebrow>Continue practising</Eyebrow>
+          <div className="mt-3 flex items-end justify-between gap-4">
+            <div>
+              <div className="text-xs font-semibold text-slate-500">Recommended</div>
+              <div data-testid="recommended-difficulty" className={cn("font-heading text-3xl font-black", DIFF_COLOR[rec.difficulty])}>{DIFFICULTY_META[rec.difficulty]?.label}</div>
+            </div>
+            <span className="rounded-full border border-slate-700 bg-slate-950/60 px-3 py-1 text-xs text-slate-400">{settings.defaultLength || 10} words</span>
+          </div>
+          <p className="mt-3 text-sm text-slate-400">{rec.reason}</p>
+          <PrimaryButton data-testid="continue-button" className="mt-5 w-full sm:w-auto" onClick={() => go("classic")}>
+            Continue <ArrowRight className="h-4 w-4" />
+          </PrimaryButton>
+        </div>
+
+        <div data-testid="daily-challenge-card" className="relative overflow-hidden rounded-3xl border border-amber-500/25 bg-gradient-to-br from-amber-500/10 to-slate-950 p-6">
+          <Eyebrow>Today's challenge</Eyebrow>
+          <h3 className="mt-3 font-heading text-2xl font-bold text-slate-100">📅 Daily Challenge</h3>
+          <p className="mt-2 text-sm text-slate-400">5 words · 1 attempt each · same words for everyone today. Share your emoji grid.</p>
+          <PrimaryButton data-testid="go-daily-button" className="mt-5 w-full sm:w-auto" onClick={() => navigate("/daily")}>
+            {todayDone ? "View today's result" : "Start Daily Challenge"} <ArrowRight className="h-4 w-4" />
+          </PrimaryButton>
         </div>
       </section>
 
-      {/* Modes */}
+      {/* Quick practice */}
       <section>
-        <SectionHeader eyebrow="Step 2" title="Choose a mode" />
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {MODES.map((m) => {
-            const Icon = modeIcons[m.id] || Layers;
-            return (
-              <button
-                key={m.id}
-                data-testid={`mode-${m.id}-card`}
-                onClick={() => start(m.id)}
-                className="group flex items-start gap-4 rounded-2xl border border-slate-800 bg-slate-900/40 p-5 text-left transition hover:-translate-y-0.5 hover:border-amber-500/40 hover:bg-slate-900"
-              >
-                <span className="grid h-11 w-11 place-items-center rounded-xl bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/30 transition group-hover:bg-amber-500/20">
-                  <Icon className="h-5 w-5" />
-                </span>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-heading text-lg font-semibold text-slate-100">{m.label}</span>
-                    <ArrowRight className="h-4 w-4 text-slate-500 transition group-hover:translate-x-1 group-hover:text-amber-400" />
+        <SectionHeader eyebrow="Quick practice" title="Jump straight in" action={<Link to="/practice" data-testid="all-modes-link" className="text-sm font-semibold text-amber-400 hover:text-amber-300">All modes →</Link>} />
+        <div className="stagger mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <QuickCard testId="quick-ten" label="10 Words" sub="Quick round" onClick={() => go("ten")} />
+          <QuickCard testId="quick-twentyfive" label="25 Words" sub="Deep session" onClick={() => go("twentyfive")} />
+          <QuickCard testId="quick-endless" label="Endless" sub="Until you stop" onClick={() => go("endless")} />
+          <QuickCard testId="quick-challenge" label="Challenge" sub="15s per word" onClick={() => go("challenge")} />
+        </div>
+      </section>
+
+      {/* Words to master + pattern + achievements */}
+      <section className="grid gap-4 lg:grid-cols-3">
+        <div data-testid="words-to-master-card" className="rounded-3xl border border-slate-800 bg-slate-900/40 p-6 lg:col-span-2">
+          <SectionHeader eyebrow="Words to master" title="Your toughest words" action={missed.length > 0 && (
+            <button data-testid="practice-missed-button" onClick={() => go("mistakes")} className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-500/20">
+              <Repeat className="h-4 w-4" /> Practice Mistakes
+            </button>
+          )} />
+          {missed.length === 0 ? (
+            <div className="mt-4 flex items-center gap-4 rounded-2xl border border-dashed border-slate-800 p-5">
+              <BeeMascot size={56} mood="happy" />
+              <p className="text-sm text-slate-400">{firstTime ? "Nothing to master yet — your misses will show up here so you can drill them." : "No words outstanding. Every miss has been mastered. Go break some new ground."}</p>
+            </div>
+          ) : (
+            <ul className="mt-4 divide-y divide-slate-800">
+              {missed.map((m) => (
+                <li key={m.word} data-testid={`missed-row-${m.word}`} className="flex items-center justify-between gap-3 py-3">
+                  <button onClick={() => navigate(`/practice?mode=ten&word=${encodeURIComponent(m.word)}`)} className="font-mono text-base tracking-wider text-slate-100 hover:text-amber-300">{m.word}</button>
+                  <div className="flex items-center gap-3">
+                    <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-800"><div className="h-full bg-rose-400" style={{ width: `${100 - m.accuracy}%` }} /></div>
+                    <span className="w-12 text-right font-mono text-xs text-slate-400">{m.correct}/{m.attempts}</span>
                   </div>
-                  <p className="mt-1 text-sm leading-snug text-slate-400">{m.description}</p>
-                </div>
-              </button>
-            );
-          })}
+                </li>
+              ))}
+            </ul>
+          )}
+          {weak && (
+            <div data-testid="weak-pattern-card" className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-500/30 bg-indigo-500/10 p-4">
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-indigo-300">Spelling pattern to practise</div>
+                <div className="mt-1 font-heading text-lg font-bold text-slate-100">{PATTERN_META[weak.pattern] || weak.pattern}</div>
+                <div className="text-xs text-slate-400">{weak.misses} misses · {weak.available} words available</div>
+              </div>
+              <GhostButton data-testid="practice-pattern-button" onClick={() => go("pattern", { pattern: weak.pattern })}>Focused session</GhostButton>
+            </div>
+          )}
         </div>
-      </section>
 
-      {/* Recent missed */}
-      {missed.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between">
-            <SectionHeader eyebrow="Weakest words" title="Practise your misses" />
-            <button
-              data-testid="practice-missed-button"
-              onClick={() => navigate("/practice?mode=classic&list=missed")}
-              className="text-sm font-semibold text-amber-400 hover:text-amber-300"
-            >
-              Drill all →
-            </button>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {missed.map((m) => (
-              <span
-                key={m.word}
-                data-testid={`missed-chip-${m.word}`}
-                className="rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-xs font-medium text-rose-200"
-              >
-                {m.word} · x{m.count}
-              </span>
+        <div data-testid="achievements-card" className="rounded-3xl border border-slate-800 bg-slate-900/40 p-6">
+          <SectionHeader eyebrow="Achievements" title={`${unlockedCount}/${achievements.length}`} action={<Link to="/achievements" data-testid="all-achievements-link" className="text-sm font-semibold text-amber-400 hover:text-amber-300">All →</Link>} />
+          <div className="mt-4 grid grid-cols-4 gap-2">
+            {achievements.slice(0, 8).map((a) => (
+              <div key={a.id} title={`${a.title} — ${a.desc}`} className={cn("grid aspect-square place-items-center rounded-xl border text-2xl", a.unlockedAt ? "border-amber-500/40 bg-amber-500/10" : "border-slate-800 bg-slate-950/40 grayscale opacity-40")}>
+                {a.emoji}
+              </div>
             ))}
           </div>
-        </section>
-      )}
+          <div className="mt-4 flex items-center gap-2 text-xs text-slate-500"><Medal className="h-3.5 w-3.5" /> Best streak {stats.bestStreak} · {stats.totalPoints || 0} points</div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <MiniLink testId="go-multiplayer-button" icon={Users} title="Multiplayer race" body="Create a room, share the 6-character code, spell head-to-head." to="/multiplayer" />
+        <MiniLink testId="go-progress-button" icon={Trophy} title="Progress & charts" body="Accuracy over time, difficulty progression, session history." to="/progress" />
+      </section>
     </div>
   );
 }
 
-function StatBox({ testId, icon: Icon, label, value, accent, suffix = "" }) {
+const DIFF_COLOR = { easy: "text-emerald-300", medium: "text-sky-300", hard: "text-amber-300", extreme: "text-rose-300" };
+
+function QuickCard({ testId, label, sub, onClick }) {
   return (
-    <div
-      data-testid={testId}
-      className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 transition hover:border-slate-700"
-    >
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{label}</span>
-        <Icon className={cn("h-4 w-4", accent)} />
-      </div>
-      <div className="mt-3 font-heading text-3xl font-black text-slate-50">
-        {value}
-        {suffix && <span className="ml-1 text-base">{suffix}</span>}
-      </div>
-    </div>
+    <button data-testid={testId} onClick={onClick} className="group rounded-2xl border border-slate-800 bg-slate-900/40 p-5 text-left transition-[transform,border-color] hover:-translate-y-0.5 hover:border-amber-500/40">
+      <div className="font-heading text-xl font-bold text-slate-100">{label}</div>
+      <div className="mt-1 flex items-center justify-between text-xs text-slate-500">{sub} <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1 group-hover:text-amber-400" /></div>
+    </button>
   );
 }
 
-function SectionHeader({ eyebrow, title }) {
+function MiniLink({ testId, icon: Icon, title, body, to }) {
   return (
-    <div>
-      <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-amber-500/80">{eyebrow}</span>
-      <h2 className="mt-1 font-heading text-2xl font-bold tracking-tight text-slate-100 sm:text-3xl">{title}</h2>
-    </div>
+    <Link to={to} data-testid={testId} className="flex items-start gap-4 rounded-2xl border border-slate-800 bg-slate-900/40 p-5 transition-colors hover:border-amber-500/40">
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-indigo-500/10 text-indigo-300 ring-1 ring-indigo-500/30"><Icon className="h-5 w-5" /></span>
+      <div>
+        <div className="font-heading text-lg font-semibold text-slate-100">{title}</div>
+        <p className="mt-1 text-sm text-slate-400">{body}</p>
+      </div>
+    </Link>
   );
 }

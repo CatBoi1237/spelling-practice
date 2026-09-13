@@ -1,0 +1,427 @@
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[enrich-2] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 0.0, Max budget: 0.0
+enriched batch 0: 25
+enriched batch 1: 25
+enriched batch 3: 25
+enriched batch 2: 25
+enriched batch 4: 25
+enriched batch 6: 25
+enriched batch 5: 25
+enriched batch 8: 25
+enriched batch 7: 25
+enriched batch 9: 25
+enriched batch 10: 13
+generated easy/Science: 18
+generated easy/Literature: 18
+generated easy/Animals: 18
+generated easy/Geography: 19
+generated easy/Technology: 18
+generated easy/Medicine: 18
+generated easy/History: 18
+generated easy/Everyday English: 18
+generated easy/Academic: 18
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-medium-Animals] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.016155, Max budget: 1.0
+generated easy/Competition: 18
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-medium-Animals] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.064125, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-medium-Animals] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.1098675, Max budget: 1.0
+generated medium/Animals: 0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-medium-Medicine] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.064125, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-medium-Medicine] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.1098675, Max budget: 1.0
+generated medium/Science: 22
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-medium-History] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.1583175, Max budget: 1.0
+generated medium/Literature: 22
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-medium-History] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.1583175, Max budget: 1.0
+generated medium/Geography: 22
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-medium-Academic] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.2194, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-medium-History] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.1583175, Max budget: 1.0
+generated medium/History: 0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-medium-Academic] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.1583175, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-medium-Competition] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.1583175, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-medium-Academic] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-medium-Competition] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+generated medium/Academic: 0
+generated medium/Technology: 22
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Science] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Literature] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.2194, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-medium-Competition] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.28138, Max budget: 1.0
+generated medium/Competition: 0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Science] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.1583175, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Literature] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Geography] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Science] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.1583175, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Geography] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Literature] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.0, Max budget: 1.0
+generated hard/Science: 0
+generated hard/Literature: 0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Animals] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.28138, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Geography] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.2194, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Technology] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+generated medium/Medicine: 22
+generated hard/Geography: 0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Medicine] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+generated medium/Everyday English: 22
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Animals] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-History] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Technology] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Everyday English] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.1583175, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Medicine] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3997475, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Animals] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.016155, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-History] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Technology] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.2194, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Everyday English] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.2194, Max budget: 1.0
+generated hard/Animals: 0
+generated hard/Technology: 0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Medicine] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Academic] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.1583175, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-History] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.1583175, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Competition] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.1583175, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Everyday English] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3968325, Max budget: 1.0
+generated hard/Medicine: 0
+generated hard/History: 0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Science] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+generated hard/Everyday English: 0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Academic] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Literature] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.1583175, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Competition] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3968325, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Geography] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3968325, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Science] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Academic] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.1583175, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Literature] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.28138, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-hard-Competition] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.064125, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Geography] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.064125, Max budget: 1.0
+generated hard/Academic: 0
+generated hard/Competition: 0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Science] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Animals] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.064125, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Literature] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Technology] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.1583175, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Geography] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+generated extreme/Science: 0
+generated extreme/Literature: 0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Medicine] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3968325, Max budget: 1.0
+generated extreme/Geography: 0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Animals] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.1583175, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-History] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Technology] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Everyday English] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Medicine] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.1583175, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Animals] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.016155, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-History] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Technology] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Everyday English] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.3404975, Max budget: 1.0
+generated extreme/Animals: 0
+generated extreme/Technology: 0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Medicine] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.519965, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Academic] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.1583175, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-History] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.016155, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Competition] attempt 1 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.28138, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Everyday English] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.519965, Max budget: 1.0
+generated extreme/Medicine: 0
+generated extreme/History: 0
+generated extreme/Everyday English: 0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Academic] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.1583175, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Competition] attempt 2 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.519965, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Competition] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.016155, Max budget: 1.0
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+[gen-extreme-Academic] attempt 3 failed: Failed to generate chat completion: litellm.RateLimitError: RateLimitError: OpenAIException - Budget has been exceeded! Key=daika73u91vc73eds1e0 (sk-...ELPw) Current cost: 1.2194, Max budget: 1.0
+generated extreme/Competition: 0
+generated extreme/Academic: 0
+DONE

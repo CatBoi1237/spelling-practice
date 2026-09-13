@@ -1,196 +1,154 @@
 import { useState } from "react";
-import { useApp } from "@/context/AppContext";
-import { resetAll } from "@/lib/storage";
-import { speak } from "@/lib/speech";
+import { Link, useNavigate } from "react-router-dom";
+import { RotateCcw, PlayCircle, Download, LogIn, LogOut, Sun, Moon, Monitor, CloudUpload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { RotateCcw, Volume2, PlayCircle } from "lucide-react";
+import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
+import { resetAll, exportAll, DEFAULT_STATS } from "@/lib/storage";
+import { speak, VOICE_LANGS } from "@/lib/speech";
+import { DIFFICULTY_META } from "@/data/words";
+import { Eyebrow } from "@/components/ui-bits";
 import { cn } from "@/lib/utils";
 
 export default function Settings() {
   const { settings, updateSettings, voices, theme, setTheme, updateStats } = useApp();
+  const { user, logout, playerName, renameGuest, syncNow, syncing, lastSync } = useAuth();
+  const navigate = useNavigate();
   const [confirmReset, setConfirmReset] = useState(false);
+  const [guestName, setGuestName] = useState(playerName);
 
-  const testVoice = () => {
-    speak("Welcome to the Spelling Bee trainer. Ready to spell?", {
-      rate: settings.rate,
-      voiceName: settings.voiceName,
-    });
-  };
+  const voiceOpts = { rate: settings.rate, voiceName: settings.voiceName, voiceLang: settings.voiceLang };
+  const englishVoices = voices.filter((v) => /^en/i.test(v.lang));
+  const filteredVoices = settings.voiceLang && settings.voiceLang !== "auto"
+    ? englishVoices.filter((v) => v.lang.replace("_", "-").toLowerCase() === settings.voiceLang.toLowerCase())
+    : englishVoices;
 
   const doReset = () => {
     resetAll();
-    updateStats({
-      totalAttempted: 0,
-      totalCorrect: 0,
-      totalIncorrect: 0,
-      bestStreak: 0,
-      currentStreak: 0,
-      highestDifficulty: null,
-      wordsCompleted: 0,
-    });
+    updateStats({ ...DEFAULT_STATS });
     setConfirmReset(false);
     toast.success("All progress has been cleared.");
   };
 
-  const englishVoices = voices.filter((v) => /^en/i.test(v.lang));
+  const doExport = () => {
+    const blob = new Blob([JSON.stringify(exportAll(), null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `spelling-bee-progress-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast.success("Progress exported.");
+  };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
+    <div className="mx-auto max-w-3xl space-y-6">
       <header>
-        <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-amber-500/80">Preferences</span>
-        <h1 className="mt-2 font-heading text-4xl font-black tracking-tight text-slate-100 sm:text-5xl">Settings</h1>
+        <Eyebrow>Preferences</Eyebrow>
+        <h1 className="mt-2 font-heading text-4xl font-black tracking-tight text-slate-50 sm:text-5xl">Settings</h1>
       </header>
 
-      <Section title="Audio">
-        <Row label="Speech speed" hint="Applied to word & sentence playback">
-          <div className="flex overflow-hidden rounded-full border border-slate-700 bg-slate-900 text-xs font-semibold">
-            {["slow", "normal", "fast"].map((r) => (
-              <button
-                key={r}
-                data-testid={`settings-speed-${r}`}
-                onClick={() => updateSettings({ rate: r })}
-                className={cn(
-                  "px-4 py-2 capitalize transition",
-                  settings.rate === r ? "bg-amber-500 text-slate-950" : "text-slate-300 hover:text-amber-300"
-                )}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
+      <Section title="Appearance">
+        <Row label="Theme" hint="System follows your device preference">
+          <Segmented
+            testId="settings-theme"
+            options={[["light", "Light", Sun], ["dark", "Dark", Moon], ["system", "System", Monitor]]}
+            value={theme}
+            onChange={setTheme}
+          />
         </Row>
+      </Section>
 
-        <Row label="Voice" hint={`${englishVoices.length} English voices detected`}>
+      <Section title="Audio">
+        <Row label="Accent" hint="Preferred English variety for the speaking voice">
+          <Segmented testId="settings-lang" options={VOICE_LANGS.map((l) => [l.id, l.id === "auto" ? "Auto" : l.id.replace("en-", "")])} value={settings.voiceLang || "auto"} onChange={(v) => updateSettings({ voiceLang: v, voiceName: null })} />
+        </Row>
+        <Row label="Voice" hint={`${filteredVoices.length} matching voice${filteredVoices.length === 1 ? "" : "s"} on this device`}>
           <select
             data-testid="settings-voice-select"
             value={settings.voiceName || ""}
             onChange={(e) => updateSettings({ voiceName: e.target.value || null })}
-            className="w-64 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 outline-none focus:border-amber-500/40"
+            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 outline-none focus:border-amber-500/40 sm:w-64"
           >
-            <option value="">System default</option>
-            {englishVoices.map((v) => (
-              <option key={v.name} value={v.name}>
-                {v.name} ({v.lang})
-              </option>
+            <option value="">Best available</option>
+            {(filteredVoices.length ? filteredVoices : englishVoices).map((v) => (
+              <option key={v.name} value={v.name}>{v.name} ({v.lang})</option>
             ))}
           </select>
         </Row>
-
+        <Row label="Speech speed" hint="Default for word & sentence playback">
+          <Segmented testId="settings-speed" options={[["slow", "Slow"], ["normal", "Normal"], ["fast", "Fast"]]} value={settings.rate} onChange={(v) => updateSettings({ rate: v })} />
+        </Row>
         <Row label="Preview voice">
-          <button
-            data-testid="settings-test-voice"
-            onClick={testVoice}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200 hover:border-amber-500/40 hover:text-amber-300"
-          >
+          <button data-testid="settings-test-voice" onClick={() => speak("Your word is: accommodate. The hotel can accommodate two hundred guests.", voiceOpts)} className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200 hover:border-amber-500/40 hover:text-amber-300">
             <PlayCircle className="h-4 w-4" /> Test voice
           </button>
         </Row>
-
-        <ToggleRow
-          testId="settings-sound-effects"
-          label="Sound effects"
-          hint="Play a chime on correct/incorrect answers"
-          checked={settings.soundEffects}
-          onChange={(v) => updateSettings({ soundEffects: v })}
-        />
-
-        <ToggleRow
-          testId="settings-autoplay"
-          label="Auto-play word"
-          hint="Speak the word automatically when a new one appears"
-          checked={settings.autoPlay}
-          onChange={(v) => updateSettings({ autoPlay: v })}
-        />
-
-        <ToggleRow
-          testId="settings-autoadvance"
-          label="Auto-advance on correct"
-          hint="Skip feedback and move to the next word when correct"
-          checked={settings.autoAdvance}
-          onChange={(v) => updateSettings({ autoAdvance: v })}
-        />
+        <ToggleRow testId="settings-sound-effects" label="Sound effects" hint="Correct, incorrect, timer and achievement sounds" checked={settings.soundEffects} onChange={(v) => updateSettings({ soundEffects: v })} />
+        <ToggleRow testId="settings-autoplay" label="Auto-play word" hint="Speak each new word automatically" checked={settings.autoPlay} onChange={(v) => updateSettings({ autoPlay: v })} />
       </Section>
 
-      <Section title="Appearance">
-        <Row label="Theme">
-          <div className="flex overflow-hidden rounded-full border border-slate-700 bg-slate-900 text-xs font-semibold">
-            {["dark", "light"].map((t) => (
-              <button
-                key={t}
-                data-testid={`settings-theme-${t}`}
-                onClick={() => setTheme(t)}
-                className={cn(
-                  "px-5 py-2 capitalize transition",
-                  theme === t ? "bg-amber-500 text-slate-950" : "text-slate-300 hover:text-amber-300"
-                )}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
+      <Section title="Practice">
+        <Row label="Default difficulty">
+          <Segmented testId="settings-difficulty" options={Object.entries(DIFFICULTY_META).map(([id, m]) => [id, m.label])} value={settings.preferredDifficulty} onChange={(v) => updateSettings({ preferredDifficulty: v })} />
         </Row>
+        <Row label="Default session length" hint="Used by Classic and the Start Practice button">
+          <Segmented testId="settings-length" options={[[5, "5"], [10, "10"], [15, "15"], [20, "20"], [30, "30"]]} value={Number(settings.defaultLength) || 10} onChange={(v) => updateSettings({ defaultLength: v })} />
+        </Row>
+        <ToggleRow testId="settings-autoadvance" label="Auto-advance on correct" hint="Move on automatically after a correct answer" checked={settings.autoAdvance} onChange={(v) => updateSettings({ autoAdvance: v })} />
+        <ToggleRow testId="settings-show-definitions" label="Show definitions" hint="Display the definition in answer feedback" checked={settings.showDefinitions !== false} onChange={(v) => updateSettings({ showDefinitions: v })} />
+        <ToggleRow testId="settings-show-tips" label="Show spelling tips" hint="Display the memory tip after a miss" checked={settings.showTips !== false} onChange={(v) => updateSettings({ showTips: v })} />
+      </Section>
 
-        <Row label="Preferred difficulty">
-          <div className="flex overflow-hidden rounded-full border border-slate-700 bg-slate-900 text-xs font-semibold">
-            {["easy", "medium", "hard", "extreme"].map((d) => (
-              <button
-                key={d}
-                data-testid={`settings-difficulty-${d}`}
-                onClick={() => updateSettings({ preferredDifficulty: d })}
-                className={cn(
-                  "px-3 py-2 capitalize transition",
-                  settings.preferredDifficulty === d ? "bg-amber-500 text-slate-950" : "text-slate-300 hover:text-amber-300"
-                )}
-              >
-                {d}
-              </button>
-            ))}
-          </div>
-        </Row>
+      <Section title="Account">
+        {user ? (
+          <>
+          <Row label="Cloud sync" hint={lastSync ? `Last synced ${new Date(lastSync).toLocaleString()}` : "Progress, streaks and mistakes sync to your account"}>
+            <button data-testid="settings-sync-now" disabled={syncing} onClick={async () => { const ok = await syncNow(); ok ? toast.success("Progress synced.") : toast.error("Sync failed — we'll retry after your next session."); }} className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200 hover:border-amber-500/40 hover:text-amber-300 disabled:opacity-50">
+              {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudUpload className="h-4 w-4" />} Sync now
+            </button>
+          </Row>
+          <Row label={user.name} hint={user.email}>
+            <button data-testid="settings-logout" onClick={async () => { await logout(); toast.success("Signed out."); navigate("/"); }} className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200 hover:border-rose-500/40 hover:text-rose-300">
+              <LogOut className="h-4 w-4" /> Log out
+            </button>
+          </Row>
+          </>
+        ) : (
+          <>
+            <Row label="Display name" hint="Shown on leaderboards and in multiplayer rooms">
+              <div className="flex gap-2">
+                <input data-testid="settings-guest-name" value={guestName} onChange={(e) => setGuestName(e.target.value)} maxLength={24} className="w-44 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 outline-none focus:border-amber-500/40" />
+                <button data-testid="settings-save-name" onClick={() => { renameGuest(guestName); toast.success("Name updated."); }} className="rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-slate-950">Save</button>
+              </div>
+            </Row>
+            <Row label="Sign in" hint="Optional — keeps your progress and streaks safe across devices">
+              <Link to="/signin" data-testid="settings-signin" className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-400"><LogIn className="h-4 w-4" /> Sign in / Sign up</Link>
+            </Row>
+          </>
+        )}
       </Section>
 
       <Section title="Data">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="text-sm font-semibold text-slate-100">Reset all progress</div>
-            <div className="text-xs text-slate-400">Clears stats, streaks, missed words, and session history.</div>
-          </div>
+        <Row label="Export progress" hint="Download everything as JSON">
+          <button data-testid="settings-export" onClick={doExport} className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200 hover:border-amber-500/40 hover:text-amber-300"><Download className="h-4 w-4" /> Export</button>
+        </Row>
+        <Row label="Reset all progress" hint="Clears stats, streaks, mistakes, achievements and history">
           {confirmReset ? (
             <div className="flex gap-2">
-              <button
-                data-testid="settings-reset-confirm"
-                onClick={doReset}
-                className="rounded-lg bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-400"
-              >
-                Yes, reset
-              </button>
-              <button
-                onClick={() => setConfirmReset(false)}
-                className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200"
-              >
-                Cancel
-              </button>
+              <button data-testid="settings-reset-confirm" onClick={doReset} className="rounded-lg bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-400">Yes, reset</button>
+              <button onClick={() => setConfirmReset(false)} className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200">Cancel</button>
             </div>
           ) : (
-            <button
-              data-testid="settings-reset-button"
-              onClick={() => setConfirmReset(true)}
-              className="inline-flex items-center gap-2 rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-500/20"
-            >
-              <RotateCcw className="h-4 w-4" /> Reset progress
-            </button>
+            <button data-testid="settings-reset-button" onClick={() => setConfirmReset(true)} className="inline-flex items-center gap-2 rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-500/20"><RotateCcw className="h-4 w-4" /> Reset progress</button>
           )}
-        </div>
+        </Row>
       </Section>
 
-      <Section title="Shortcuts">
+      <Section title="Keyboard shortcuts">
         <ul className="grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
-          <li className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
-            <kbd className="rounded bg-slate-800 px-2 py-0.5 font-mono text-xs text-amber-300">Enter</kbd> — submit spelling
-          </li>
-          <li className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
-            <Volume2 className="mr-1 inline h-3 w-3 text-amber-300" /> Tap the play button anytime to replay
-          </li>
+          {[["Space", "play the word"], ["R", "replay (when not typing)"], ["Enter", "submit / next"], ["Esc", "exit session"]].map(([k, d]) => (
+            <li key={k} className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2"><kbd className="rounded bg-slate-800 px-2 py-0.5 font-mono text-xs text-amber-300">{k}</kbd> — {d}</li>
+          ))}
         </ul>
       </Section>
     </div>
@@ -208,7 +166,7 @@ function Section({ title, children }) {
 
 function Row({ label, hint, children }) {
   return (
-    <div className="flex flex-col justify-between gap-2 border-b border-slate-800 pb-4 last:border-b-0 last:pb-0 sm:flex-row sm:items-center">
+    <div className="flex flex-col justify-between gap-3 border-b border-slate-800 pb-4 last:border-b-0 last:pb-0 sm:flex-row sm:items-center">
       <div>
         <div className="text-sm font-semibold text-slate-100">{label}</div>
         {hint && <div className="text-xs text-slate-400">{hint}</div>}
@@ -218,25 +176,23 @@ function Row({ label, hint, children }) {
   );
 }
 
+function Segmented({ testId, options, value, onChange }) {
+  return (
+    <div className="flex flex-wrap overflow-hidden rounded-full border border-slate-700 bg-slate-900 text-xs font-semibold">
+      {options.map(([id, label, Icon]) => (
+        <button key={id} data-testid={`${testId}-${id}`} onClick={() => onChange(id)} className={cn("inline-flex items-center gap-1.5 px-3.5 py-2 transition-colors", value === id ? "bg-amber-500 text-slate-950" : "text-slate-300 hover:text-amber-300")}>
+          {Icon && <Icon className="h-3.5 w-3.5" />} {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function ToggleRow({ testId, label, hint, checked, onChange }) {
   return (
     <Row label={label} hint={hint}>
-      <button
-        data-testid={testId}
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={cn(
-          "relative h-6 w-11 rounded-full border transition",
-          checked ? "border-amber-500/60 bg-amber-500" : "border-slate-700 bg-slate-800"
-        )}
-      >
-        <span
-          className={cn(
-            "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
-            checked ? "translate-x-5" : "translate-x-0.5"
-          )}
-        />
+      <button data-testid={testId} role="switch" aria-checked={checked} aria-label={label} onClick={() => onChange(!checked)} className={cn("relative h-6 w-11 shrink-0 rounded-full border transition-colors", checked ? "border-amber-500/60 bg-amber-500" : "border-slate-700 bg-slate-800")}>
+        <span className={cn("absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform", checked ? "translate-x-5" : "translate-x-0.5")} />
       </button>
     </Row>
   );

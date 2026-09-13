@@ -162,6 +162,10 @@ class RoomActionBody(BaseModel):
     player_id: str
 
 
+class ReadyBody(BaseModel):
+    player_id: str
+    ready: bool
+
 
 class ClassroomCreateBody(BaseModel):
     word_count: int = 10
@@ -229,7 +233,6 @@ async def login(body: LoginBody, request: Request, response: Response):
     token = create_access_token(str(user["_id"]), email, user.get("auth_version", 1))
     set_auth_cookie(response, token)
     return {"user": public_user(user), "token": token}
-
 
 
 async def send_password_reset_email(email: str, reset_url: str) -> None:
@@ -594,6 +597,7 @@ async def create_room(body: RoomCreateBody, user: Optional[dict] = Depends(get_o
         "players": [{
             "player_id": pid, "name": name, "registered": bool(user),
             "score": 0, "answered": 0, "total_time_ms": 0, "done": False, "finished_at": None,
+            "ready": False,
         }],
     }
     await db.rooms.insert_one(room)
@@ -629,8 +633,30 @@ async def join_room(code: str, body: RoomJoinBody, user: Optional[dict] = Depend
         await db.rooms.update_one({"code": code}, {"$push": {"players": {
             "player_id": pid, "name": name, "registered": bool(user),
             "score": 0, "answered": 0, "total_time_ms": 0, "done": False, "finished_at": None,
+            "ready": False,
         }}})
 
+    room = await db.rooms.find_one({"code": code}, {"_id": 0})
+    return sanitize_room(room)
+
+
+@api_router.post("/rooms/{code}/ready")
+async def set_room_ready(code: str, body: ReadyBody, user: Optional[dict] = Depends(get_optional_user)):
+    code = code.upper()
+    room = await db.rooms.find_one({"code": code})
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    if room.get("status") != "lobby":
+        raise HTTPException(status_code=400, detail="Ready status can only change in the lobby")
+
+    pid = str(user["_id"]) if user else body.player_id
+    if not any(p["player_id"] == pid for p in room.get("players", [])):
+        raise HTTPException(status_code=403, detail="You are not in this room")
+
+    await db.rooms.update_one(
+        {"code": code, "players.player_id": pid},
+        {"$set": {"players.$.ready": bool(body.ready)}},
+    )
     room = await db.rooms.find_one({"code": code}, {"_id": 0})
     return sanitize_room(room)
 
@@ -644,6 +670,11 @@ async def start_room(code: str, body: RoomActionBody, user: Optional[dict] = Dep
     pid = str(user["_id"]) if user else body.player_id
     if room["host_id"] != pid:
         raise HTTPException(status_code=403, detail="Only the host can start the race")
+
+    players = room.get("players", [])
+    if not players or not all(bool(player.get("ready")) for player in players):
+        raise HTTPException(status_code=400, detail="Everyone must be ready before the race can start")
+
     await db.rooms.update_one({"code": code}, {"$set": {
         "status": "running", "started_at": datetime.now(timezone.utc).isoformat(),
     }})
@@ -693,7 +724,6 @@ async def room_finish(code: str, body: RoomActionBody, user: Optional[dict] = De
     return sanitize_room(room)
 
 
-
 @api_router.post("/rooms/{code}/rematch")
 async def room_rematch(code: str, body: RoomActionBody, user: Optional[dict] = Depends(get_optional_user)):
     code = code.upper()
@@ -719,6 +749,7 @@ async def room_rematch(code: str, body: RoomActionBody, user: Optional[dict] = D
             "total_time_ms": 0,
             "done": False,
             "finished_at": None,
+            "ready": False,
         })
         reset_players.append(updated_player)
 
@@ -734,7 +765,6 @@ async def room_rematch(code: str, body: RoomActionBody, user: Optional[dict] = D
 
     room = await db.rooms.find_one({"code": code}, {"_id": 0})
     return sanitize_room(room)
-
 
 
 # ---------------- classroom mode ----------------
@@ -770,6 +800,7 @@ def classroom_view(room: dict, viewer_id: Optional[str] = None, host_view: bool 
             "registered": bool(student.get("registered")),
             "total_points": student.get("total_points", 0),
             "answered": answered,
+            "ready": bool(student.get("ready", False)),
         }
 
         # Only reveal round result details after the teacher reveals the word.
@@ -786,6 +817,11 @@ def classroom_view(room: dict, viewer_id: Optional[str] = None, host_view: bool 
         1
         for student in room.get("students", [])
         if student.get("answered_round", -1) == round_index
+    )
+    ready_count = sum(
+        1
+        for student in room.get("students", [])
+        if bool(student.get("ready", False))
     )
 
     if host_view:
@@ -807,6 +843,7 @@ def classroom_view(room: dict, viewer_id: Optional[str] = None, host_view: bool 
         "round_started_at": room.get("round_started_at"),
         "revealed": revealed,
         "answered_count": answered_count,
+        "ready_count": ready_count,
         "created_at": room["created_at"],
         "students": students,
     }
@@ -974,6 +1011,7 @@ async def join_classroom(
                         "last_answer": None,
                         "last_correct": None,
                         "last_points": 0,
+                        "ready": False,
                     }
                 }
             },
@@ -986,6 +1024,38 @@ async def join_classroom(
         viewer_id=pid,
         host_view=False,
     )
+
+
+@api_router.post("/classrooms/{code}/ready")
+async def set_classroom_ready(
+    code: str,
+    body: ReadyBody,
+    user: Optional[dict] = Depends(get_optional_user),
+):
+    code = code.upper()
+    room = await get_classroom_or_404(code)
+
+    if room.get("status") != "lobby":
+        raise HTTPException(
+            status_code=400,
+            detail="Ready status can only change in the lobby",
+        )
+
+    pid = str(user["_id"]) if user else body.player_id
+    student = next(
+        (student for student in room.get("students", []) if student["player_id"] == pid),
+        None,
+    )
+    if not student:
+        raise HTTPException(status_code=403, detail="You are not a student in this classroom")
+
+    await db.classrooms.update_one(
+        {"code": code, "students.player_id": pid},
+        {"$set": {"students.$.ready": bool(body.ready)}},
+    )
+
+    room = await get_classroom_or_404(code)
+    return classroom_view(room, viewer_id=pid, host_view=False)
 
 
 @api_router.post("/classrooms/{code}/round/start")
@@ -1027,6 +1097,13 @@ async def start_classroom_round(
             status_code=400,
             detail="There are no more words",
         )
+
+    if next_index == 0:
+        students = room.get("students", [])
+        if not students:
+            raise HTTPException(status_code=400, detail="At least one student must join before the game can start")
+        if not all(bool(student.get("ready")) for student in students):
+            raise HTTPException(status_code=400, detail="All students must be ready before the game can start")
 
     word = body.word.strip()
 

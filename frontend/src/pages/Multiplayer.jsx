@@ -222,6 +222,106 @@ export default function Multiplayer() {
           </button>
         </form>
       </div>
+
+      <section className="rounded-3xl border border-amber-500/25 bg-gradient-to-br from-amber-500/10 via-slate-900 to-slate-950 p-6 sm:p-8">
+        <div className="flex items-start gap-4">
+          <div className="rounded-2xl bg-amber-500/15 p-3">
+            <School className="h-7 w-7 text-amber-400" />
+          </div>
+
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-amber-400">
+              Classroom Mode
+            </div>
+
+            <h2 className="mt-1 font-heading text-3xl font-black text-slate-50">
+              Teacher-led spelling game
+            </h2>
+
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">
+              The teacher controls the words and audio. Students only type their spelling.
+              Correct and faster answers earn more points. Incorrect answers earn zero.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-7 grid gap-6 md:grid-cols-2">
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-5">
+            <h3 className="font-heading text-xl font-bold text-slate-100">
+              Host a classroom
+            </h3>
+
+            <p className="mt-2 text-xs text-slate-500">
+              Teacher account required.
+            </p>
+
+            <div className="mt-5">
+              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                Seconds per word
+              </div>
+
+              <div className="mt-2 flex gap-2">
+                {[15, 20, 30].map((seconds) => (
+                  <button
+                    key={seconds}
+                    type="button"
+                    onClick={() => setTimeLimit(seconds)}
+                    className={cn(
+                      "flex-1 rounded-xl border px-3 py-2 text-sm font-semibold transition",
+                      timeLimit === seconds
+                        ? "border-amber-500/60 bg-amber-500/15 text-amber-300"
+                        : "border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200"
+                    )}
+                  >
+                    {seconds}s
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={createClassroom}
+              disabled={classBusy}
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-6 py-3 font-bold text-slate-950 hover:bg-amber-400 disabled:opacity-50"
+            >
+              <School className="h-4 w-4" />
+              Host Classroom Game
+            </button>
+          </div>
+
+          <form
+            onSubmit={joinClassroom}
+            className="rounded-2xl border border-slate-800 bg-slate-950/40 p-5"
+          >
+            <h3 className="font-heading text-xl font-bold text-slate-100">
+              Join a classroom
+            </h3>
+
+            <p className="mt-2 text-xs text-slate-500">
+              Students do not need an account.
+            </p>
+
+            <input
+              value={classCode}
+              onChange={(e) => setClassCode(e.target.value.toUpperCase())}
+              maxLength={6}
+              placeholder="BEE742"
+              className="mt-6 w-full rounded-2xl border border-slate-800 bg-slate-950 px-5 py-4 text-center font-mono text-2xl uppercase tracking-[0.4em] text-slate-100 outline-none ring-amber-500/40 focus:border-amber-500/50 focus:ring-2"
+            />
+
+            <button
+              type="submit"
+              disabled={classBusy}
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-6 py-3 font-bold text-amber-300 hover:bg-amber-500/20 disabled:opacity-50"
+            >
+              Join classroom
+            </button>
+          </form>
+
+        </div>
+      </section>
     </div>
   );
 }

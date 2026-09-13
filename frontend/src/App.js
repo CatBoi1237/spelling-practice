@@ -11,8 +11,9 @@ import Progress from "@/pages/Progress";
 import Settings from "@/pages/Settings";
 import Daily from "@/pages/Daily";
 import Multiplayer from "@/pages/Multiplayer";
-import Room from "@/pages/Room";
+import RoomShell from "@/pages/RoomShell";
 import ClassroomShell from "@/pages/ClassroomShell";
+import CustomWordLists from "@/pages/CustomWordLists";
 import SignIn from "@/pages/SignIn";
 import ResetPassword from "@/pages/ResetPassword";
 import Achievements from "@/pages/Achievements";
@@ -36,7 +37,8 @@ function App() {
               <Route path="/settings" element={<Settings />} />
               <Route path="/daily" element={<Daily />} />
               <Route path="/multiplayer" element={<Multiplayer />} />
-              <Route path="/room/:code" element={<Room />} />
+              <Route path="/word-lists" element={<CustomWordLists />} />
+              <Route path="/room/:code" element={<RoomShell />} />
               <Route path="/classroom/:code" element={<ClassroomShell />} />
               <Route path="/signin" element={<SignIn />} />
               <Route path="/reset-password" element={<ResetPassword />} />

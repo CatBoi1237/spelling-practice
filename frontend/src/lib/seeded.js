@@ -1,5 +1,34 @@
 // Deterministic word selection: every client with the same seed gets the same words.
 import { WORDS, WORDS_BY_DIFFICULTY } from "@/data/words";
+import { getActiveGameCustomList } from "@/lib/customWordLists";
+
+const WORD_LOOKUP = new Map(
+  WORDS.map((item) => [String(item.word || "").toLocaleLowerCase(), item])
+);
+
+function customWordObjects(customList) {
+  if (!customList?.words?.length) return [];
+
+  return customList.words.map((word) => {
+    const known = WORD_LOOKUP.get(String(word).toLocaleLowerCase());
+
+    if (known) {
+      return {
+        ...known,
+        word,
+      };
+    }
+
+    return {
+      word,
+      difficulty: "custom",
+      definition: "",
+      example: "",
+      origin: "",
+      originNote: "",
+    };
+  });
+}
 
 function mulberry32(seed) {
   let a = seed >>> 0;
@@ -13,6 +42,14 @@ function mulberry32(seed) {
 }
 
 export function pickSeededWords(seed, count, difficulty = "mixed") {
+  // Race and Classroom pages may have a teacher-selected custom list attached
+  // to the current room. Keeping this lookup here means every existing caller
+  // (Race, Classroom host controls, results reporting) stays in sync.
+  const custom = getActiveGameCustomList();
+  if (custom?.words?.length) {
+    return customWordObjects(custom).slice(0, count);
+  }
+
   const pool = difficulty === "mixed" ? WORDS : WORDS_BY_DIFFICULTY[difficulty] || WORDS;
   const sorted = [...pool].sort((a, b) => a.word.localeCompare(b.word));
   const rand = mulberry32(seed);

@@ -6,6 +6,10 @@ load_dotenv(ROOT_DIR / '.env')
 
 import os
 import json
+import hashlib
+import secrets
+import asyncio
+import requests
 import jwt
 import bcrypt
 import random
@@ -51,12 +55,13 @@ def get_jwt_secret() -> str:
     return os.environ["JWT_SECRET"]
 
 
-def create_access_token(user_id: str, email: str) -> str:
+def create_access_token(user_id: str, email: str, auth_version: int = 1) -> str:
     payload = {
         "sub": user_id,
         "email": email,
         "exp": datetime.now(timezone.utc) + timedelta(days=7),
         "type": "access",
+        "ver": auth_version,
     }
     return jwt.encode(payload, get_jwt_secret(), algorithm=JWT_ALGORITHM)
 
@@ -90,6 +95,10 @@ async def get_optional_user(request: Request) -> Optional[dict]:
         if payload.get("type") != "access":
             return None
         user = await db.users.find_one({"_id": ObjectId(payload["sub"])})
+        if not user:
+            return None
+        if payload.get("ver", 1) != user.get("auth_version", 1):
+            return None
         return user
     except (jwt.InvalidTokenError, Exception):
         return None
@@ -112,6 +121,15 @@ class RegisterBody(BaseModel):
 class LoginBody(BaseModel):
     email: EmailStr
     password: str
+
+
+class ForgotPasswordBody(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordBody(BaseModel):
+    token: str = Field(min_length=20)
+    password: str = Field(min_length=6)
 
 
 class DailySubmitBody(BaseModel):
@@ -155,10 +173,11 @@ async def register(body: RegisterBody, response: Response):
         "password_hash": hash_password(body.password),
         "name": (body.name or email.split("@")[0]).strip()[:24],
         "created_at": datetime.now(timezone.utc).isoformat(),
+        "auth_version": 1,
     }
     res = await db.users.insert_one(doc)
     doc["_id"] = res.inserted_id
-    token = create_access_token(str(res.inserted_id), email)
+    token = create_access_token(str(res.inserted_id), email, doc.get("auth_version", 1))
     set_auth_cookie(response, token)
     return {"user": public_user(doc), "token": token}
 
@@ -186,9 +205,196 @@ async def login(body: LoginBody, request: Request, response: Response):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     await db.login_attempts.delete_one({"identifier": identifier})
-    token = create_access_token(str(user["_id"]), email)
+    token = create_access_token(str(user["_id"]), email, user.get("auth_version", 1))
     set_auth_cookie(response, token)
     return {"user": public_user(user), "token": token}
+
+
+
+async def send_password_reset_email(email: str, reset_url: str) -> None:
+    api_key = os.environ.get("RESEND_API_KEY")
+    from_email = os.environ.get("RESET_FROM_EMAIL")
+
+    if not api_key or not from_email:
+        raise RuntimeError("Password reset email configuration is missing")
+
+    payload = {
+        "from": f"SpellBee <{from_email}>",
+        "to": [email],
+        "subject": "Reset your SpellBee password",
+        "html": f"""
+        <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:32px;color:#172033">
+          <h1 style="margin-bottom:8px;">Reset your SpellBee password 🐝</h1>
+          <p>We received a request to reset the password for your SpellBee account.</p>
+
+          <p style="margin:30px 0;">
+            <a href="{reset_url}"
+               style="background:#f59e0b;color:#111827;text-decoration:none;padding:13px 22px;border-radius:10px;font-weight:bold;">
+               Reset password
+            </a>
+          </p>
+
+          <p>This link expires in 30 minutes and can only be used once.</p>
+          <p>If you didn't request this, you can safely ignore this email.</p>
+
+          <hr style="border:none;border-top:1px solid #ddd;margin:28px 0;" />
+          <p style="font-size:12px;color:#687386;">
+            SpellBee · https://spellbee.dpdns.org
+          </p>
+        </div>
+        """,
+        "text": f"""Reset your SpellBee password
+
+Open this link:
+{reset_url}
+
+This link expires in 30 minutes and can only be used once.
+
+If you did not request this, you can ignore this email.
+""",
+    }
+
+    def send():
+        result = requests.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=15,
+        )
+        result.raise_for_status()
+
+    await asyncio.to_thread(send)
+
+
+@api_router.post("/auth/forgot-password")
+async def forgot_password(body: ForgotPasswordBody):
+    email = body.email.lower().strip()
+
+    # Always return the same response so people cannot discover
+    # which email addresses have SpellBee accounts.
+    message = {
+        "message": "If an account exists for that email, a password reset link has been sent."
+    }
+
+    user = await db.users.find_one({"email": email})
+    if not user:
+        return message
+
+    now = datetime.now(timezone.utc)
+
+    # Prevent repeatedly emailing the same account.
+    recent = await db.password_reset_rate.find_one({
+        "email": email,
+        "last_at": {"$gt": now - timedelta(seconds=60)},
+    })
+
+    if recent:
+        return message
+
+    await db.password_reset_rate.update_one(
+        {"email": email},
+        {"$set": {"last_at": now}},
+        upsert=True,
+    )
+
+    # Invalidate any older unused reset links.
+    await db.password_reset_tokens.delete_many({
+        "user_id": str(user["_id"]),
+        "used": False,
+    })
+
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+
+    await db.password_reset_tokens.insert_one({
+        "token_hash": token_hash,
+        "user_id": str(user["_id"]),
+        "email": email,
+        "created_at": now,
+        "expires_at": now + timedelta(minutes=30),
+        "used": False,
+    })
+
+    app_url = os.environ.get("APP_URL", "https://spellbee.dpdns.org").rstrip("/")
+    reset_url = f"{app_url}/reset-password?token={raw_token}"
+
+    try:
+        await send_password_reset_email(email, reset_url)
+    except Exception:
+        logger.exception("Failed to send password reset email")
+        await db.password_reset_tokens.delete_one({"token_hash": token_hash})
+
+    return message
+
+
+@api_router.post("/auth/reset-password")
+async def reset_password(body: ResetPasswordBody, response: Response):
+    token_hash = hashlib.sha256(body.token.encode("utf-8")).hexdigest()
+    now = datetime.now(timezone.utc)
+
+    reset = await db.password_reset_tokens.find_one({
+        "token_hash": token_hash,
+        "used": False,
+        "expires_at": {"$gt": now},
+    })
+
+    if not reset:
+        raise HTTPException(
+            status_code=400,
+            detail="This password reset link is invalid or has expired.",
+        )
+
+    # Atomically claim the token so it cannot be used twice.
+    claimed = await db.password_reset_tokens.update_one(
+        {
+            "_id": reset["_id"],
+            "used": False,
+            "expires_at": {"$gt": now},
+        },
+        {
+            "$set": {
+                "used": True,
+                "used_at": now,
+            }
+        },
+    )
+
+    if claimed.modified_count != 1:
+        raise HTTPException(
+            status_code=400,
+            detail="This password reset link has already been used.",
+        )
+
+    user = await db.users.find_one({"_id": ObjectId(reset["user_id"])})
+    if not user:
+        raise HTTPException(status_code=400, detail="Account not found.")
+
+    new_auth_version = user.get("auth_version", 1) + 1
+
+    await db.users.update_one(
+        {"_id": user["_id"]},
+        {
+            "$set": {
+                "password_hash": hash_password(body.password),
+                "auth_version": new_auth_version,
+                "password_changed_at": now,
+            }
+        },
+    )
+
+    # Remove any other reset links for this account.
+    await db.password_reset_tokens.delete_many({
+        "user_id": str(user["_id"]),
+        "used": False,
+    })
+
+    # Log the browser out if it currently has an old session cookie.
+    response.delete_cookie("access_token", path="/")
+
+    return {"message": "Your password has been reset successfully."}
 
 
 @api_router.post("/auth/logout")
@@ -627,6 +833,9 @@ async def startup():
     await db.daily_results.create_index([("date", 1), ("score", -1), ("time_ms", 1)])
     await db.rooms.create_index("code", unique=True)
     await db.login_attempts.create_index("identifier")
+    await db.password_reset_tokens.create_index("token_hash", unique=True)
+    await db.password_reset_tokens.create_index("expires_at", expireAfterSeconds=0)
+    await db.password_reset_rate.create_index("email", unique=True)
     await db.scores.create_index([("created_at", -1)])
     await db.scores.create_index([("player_id", 1), ("created_at", -1)])
     await db.sync.create_index("user_id", unique=True)

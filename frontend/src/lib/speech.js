@@ -37,6 +37,7 @@ export function getCachedVoices() {
 }
 
 const RATE_PRESETS = {
+  verySlow: 0.5,
   slow: 0.7,
   normal: 0.95,
   fast: 1.2,

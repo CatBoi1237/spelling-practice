@@ -125,7 +125,7 @@ function Session() {
     if (kind === "definition") speak(`Definition: ${currentWord.definition}`, voiceOpts);
     if (kind === "sentence") speakSequence([currentWord.example, currentWord.word], voiceOpts);
     if (kind === "origin") speak(currentWord.origin ? `This word comes from ${currentWord.origin}. ${currentWord.originNote || ""}` : "The judge has no origin notes for this word.", voiceOpts);
-    if (kind === "pronunciation") speakSequence([currentWord.word], { ...voiceOpts, rate: "slow" });
+    if (kind === "pronunciation") speakSequence([currentWord.word], { ...voiceOpts, rate: "verySlow" });
   };
 
   const onHint = (h) => {
@@ -307,6 +307,7 @@ function Session() {
           plays={plays}
           onPlay={() => playWord()}
           onSlow={() => playWord("slow")}
+          onVerySlow={() => playWord("verySlow")}
           onSentence={playSentence}
           sentenceShown={sentenceShown}
           onHint={onHint}

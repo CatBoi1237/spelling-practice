@@ -262,14 +262,14 @@ export default function Classroom() {
   };
 
 
-  const playCurrentWord = () => {
+  const playCurrentWord = (rateOverride = null) => {
     if (!room?.current_word) return;
 
     cancelSpeech();
 
     setTimeout(() => {
       speak(room.current_word, {
-        rate: settings.rate,
+        rate: rateOverride || settings.rate,
         voiceName: settings.voiceName,
         voiceLang: settings.voiceLang,
       });
@@ -558,6 +558,8 @@ export default function Classroom() {
                 room={room}
                 lastRound={lastRound}
                 playWord={playCurrentWord}
+                playWordSlow={() => playCurrentWord("slow")}
+                playWordVerySlow={() => playCurrentWord("verySlow")}
                 reveal={reveal}
                 next={startNextRound}
                 finish={finish}
@@ -677,6 +679,8 @@ function TeacherRound({
   room,
   lastRound,
   playWord,
+  playWordSlow,
+  playWordVerySlow,
   reveal,
   next,
   finish,

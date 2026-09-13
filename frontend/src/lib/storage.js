@@ -13,7 +13,7 @@ export const KEYS = {
 };
 
 export const DEFAULT_SETTINGS = {
-  rate: "normal", // slow | normal | fast
+  rate: "normal", // verySlow | slow | normal | fast
   voiceName: null,
   voiceLang: "auto", // auto | en-AU | en-GB | en-US
   soundEffects: true,

@@ -20,7 +20,7 @@ function ControlButton({ testId, icon: Icon, label, onClick, disabled, active })
   );
 }
 
-export function PromptCard({ word, mode, plays, onPlay, onSlow, onSentence, sentenceShown, onHint, hintsUsed, onSubmit, onGiveUp, onJudgeAsk, judgeInfo, definitionShown }) {
+export function PromptCard({ word, mode, plays, onPlay, onSlow, onVerySlow, onSentence, sentenceShown, onHint, hintsUsed, onSubmit, onGiveUp, onJudgeAsk, judgeInfo, definitionShown }) {
   const [input, setInput] = useState("");
   const [hintOpen, setHintOpen] = useState(false);
   const [revealed, setRevealed] = useState([]);
@@ -90,6 +90,7 @@ export function PromptCard({ word, mode, plays, onPlay, onSlow, onSentence, sent
           <div className="flex flex-wrap items-center justify-center gap-2">
             <ControlButton testId="repeat-word-button" icon={RotateCcw} label="Repeat" onClick={onPlay} disabled={mode.singlePlay} />
             <ControlButton testId="slow-word-button" icon={Turtle} label="Slow" onClick={onSlow} disabled={mode.singlePlay} />
+            <ControlButton testId="very-slow-word-button" icon={Turtle} label="Very slow" onClick={onVerySlow} disabled={mode.singlePlay} />
             <ControlButton testId="use-in-sentence-button" icon={MessageSquareText} label="Sentence" onClick={onSentence} disabled={mode.singlePlay || mode.noHints} active={sentenceShown} />
             <div className="relative">
               <ControlButton testId="hint-button" icon={Lightbulb} label={hintsUsed ? `Hint (${hintsUsed})` : "Hint"} onClick={() => setHintOpen((o) => !o)} disabled={mode.noHints} active={hintOpen} />

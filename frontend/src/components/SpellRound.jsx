@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Volume2, RotateCcw, ArrowRight, Check, X } from "lucide-react";
+import { Volume2, RotateCcw, Turtle, ArrowRight, Check, X } from "lucide-react";
 import { speak, cancelSpeech, playTone } from "@/lib/speech";
 import { useApp } from "@/context/AppContext";
 import { recordWordAttempt } from "@/lib/storage";
@@ -66,7 +66,7 @@ export default function SpellRound({ word, index, total, maxPlays = 3, onResult,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [word.word, index]);
 
-  const play = () => {
+  const play = (rateOverride = null) => {
     if (plays >= maxPlays) {
       toast(`You can only hear this word ${maxPlays} times.`);
       return;
@@ -87,7 +87,7 @@ export default function SpellRound({ word, index, total, maxPlays = 3, onResult,
       if (token !== roundTokenRef.current) return;
 
       speak(word.word, {
-        rate: settings.rate,
+        rate: rateOverride || settings.rate,
         voiceName: settings.voiceName,
         voiceLang: settings.voiceLang,
       });

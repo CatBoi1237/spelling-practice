@@ -76,7 +76,7 @@ export default function Settings() {
           </select>
         </Row>
         <Row label="Speech speed" hint="Default for word & sentence playback">
-          <Segmented testId="settings-speed" options={[["slow", "Slow"], ["normal", "Normal"], ["fast", "Fast"]]} value={settings.rate} onChange={(v) => updateSettings({ rate: v })} />
+          <Segmented testId="settings-speed" options={[["verySlow", "Very slow"], ["slow", "Slow"], ["normal", "Normal"], ["fast", "Fast"]]} value={settings.rate} onChange={(v) => updateSettings({ rate: v })} />
         </Row>
         <Row label="Preview voice">
           <button data-testid="settings-test-voice" onClick={() => speak("Your word is: accommodate. The hotel can accommodate two hundred guests.", voiceOpts)} className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200 hover:border-amber-500/40 hover:text-amber-300">

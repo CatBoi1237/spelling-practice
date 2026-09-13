@@ -1,0 +1,21 @@
+{
+  "short_name": "SpellBee",
+  "name": "SpellBee — Spelling Practice",
+  "description": "Listen, spell and master words with school levels, daily challenges, Race Mode and Classroom Mode.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#020617",
+  "theme_color": "#f59e0b",
+  "categories": ["education", "games"],
+  "icons": [
+    {
+      "src": "/spellbee-icon.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

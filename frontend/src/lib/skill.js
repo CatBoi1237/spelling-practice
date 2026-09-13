@@ -1,12 +1,33 @@
 // Adaptive difficulty engine + hidden skill rating (1–10).
-import { WORDS } from "@/data/words";
+import { DIFFICULTY_META, WORDS } from "@/data/words";
 import { getMissed } from "@/lib/storage";
 
-const WEIGHT = { easy: 1, medium: 2, hard: 3, extreme: 4, mixed: 2.5 };
-export const DIFF_ORDER = ["easy", "medium", "hard", "extreme"];
+const WEIGHT = {
+  grade4: 0.5,
+  grade5: 0.75,
+  grade6: 1,
+  year7: 1.25,
+  easy: 1.5,
+  medium: 2.5,
+  hard: 3.25,
+  extreme: 4,
+  mixed: 2.5,
+};
+
+export const DIFF_ORDER = [
+  "grade4",
+  "grade5",
+  "grade6",
+  "year7",
+  "easy",
+  "medium",
+  "hard",
+  "extreme",
+];
 
 export function rankDiff(d) {
-  return { easy: 1, medium: 2, hard: 3, extreme: 4 }[d] || 0;
+  const index = DIFF_ORDER.indexOf(d);
+  return index >= 0 ? index + 1 : 0;
 }
 
 // Returns null until the user has attempted at least 10 words.
@@ -26,7 +47,7 @@ export function computeSkill(history, stats) {
     }
   });
   if (total < 10) return null;
-  const wAcc = weighted / total; // 0..4
+  const wAcc = weighted / total; // approximately 0..4
   const avgTime = timeN ? timeSum / timeN : 8;
   const speedBonus = Math.max(0, Math.min(1, (10 - avgTime) / 8));
   const hintPenalty = stats.totalAttempted ? Math.min(0.8, (stats.hintsUsed / stats.totalAttempted) * 1.5) : 0;
@@ -52,21 +73,22 @@ export function accuracyAt(history, difficulty) {
 }
 
 export function recommendDifficulty(history, preferred = "medium") {
+  const safePreferred = DIFF_ORDER.includes(preferred) ? preferred : "medium";
   const level = computeSkill(history, { totalAttempted: 0, hintsUsed: 0 });
-  const acc = accuracyAt(history, preferred);
-  const idx = DIFF_ORDER.indexOf(preferred);
+  const acc = accuracyAt(history, safePreferred);
+  const idx = DIFF_ORDER.indexOf(safePreferred);
   if (!acc || acc.n < 8) {
-    return { difficulty: preferred, reason: "Complete a few sessions and we'll tune this for you.", level };
+    return { difficulty: safePreferred, reason: "Complete a few sessions and we'll tune this for you.", level };
   }
-  if (acc.pct >= 88 && idx < 3) {
+  if (acc.pct >= 88 && idx < DIFF_ORDER.length - 1) {
     const next = DIFF_ORDER[idx + 1];
-    return { difficulty: next, reason: `Your accuracy is ${acc.pct}% on ${cap(preferred)}, so we've increased your challenge.`, level };
+    return { difficulty: next, reason: `Your accuracy is ${acc.pct}% on ${label(safePreferred)}, so we've increased your challenge.`, level };
   }
   if (acc.pct < 55 && idx > 0) {
     const prev = DIFF_ORDER[idx - 1];
-    return { difficulty: prev, reason: `You're at ${acc.pct}% on ${cap(preferred)} — let's rebuild confidence on ${cap(prev)}.`, level };
+    return { difficulty: prev, reason: `You're at ${acc.pct}% on ${label(safePreferred)} — let's rebuild confidence on ${label(prev)}.`, level };
   }
-  return { difficulty: preferred, reason: `You're at ${acc.pct}% on ${cap(preferred)}. Keep pushing — ${acc.pct >= 75 ? "you're close to levelling up." : "consistency wins bees."}`, level };
+  return { difficulty: safePreferred, reason: `You're at ${acc.pct}% on ${label(safePreferred)}. Keep pushing — ${acc.pct >= 75 ? "you're close to levelling up." : "consistency wins bees."}`, level };
 }
 
 // Which spelling pattern is tripping the user most?
@@ -87,6 +109,6 @@ export function weakPattern() {
   return { pattern: top[0], misses: top[1], available: pool.length };
 }
 
-function cap(s) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
+function label(id) {
+  return DIFFICULTY_META[id]?.label || id;
 }

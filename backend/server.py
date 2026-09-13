@@ -162,6 +162,27 @@ class RoomActionBody(BaseModel):
     player_id: str
 
 
+
+class ClassroomCreateBody(BaseModel):
+    word_count: int = 10
+    difficulty: str = "medium"
+    time_limit_sec: int = Field(default=20, ge=10, le=60)
+
+
+class ClassroomJoinBody(BaseModel):
+    player_id: str
+    name: str = Field(min_length=1, max_length=24)
+
+
+class ClassroomRoundBody(BaseModel):
+    word: str = Field(min_length=1, max_length=80)
+
+
+class ClassroomSubmitBody(BaseModel):
+    player_id: str
+    answer: str = Field(default="", max_length=100)
+
+
 # ---------------- auth routes ----------------
 @api_router.post("/auth/register")
 async def register(body: RegisterBody, response: Response):
@@ -715,6 +736,522 @@ async def room_rematch(code: str, body: RoomActionBody, user: Optional[dict] = D
     return sanitize_room(room)
 
 
+
+# ---------------- classroom mode ----------------
+
+def classroom_points(correct: bool, elapsed_ms: int, time_limit_ms: int) -> int:
+    """
+    Correct answers score from ~1000 down to 200 based on speed.
+    Incorrect answers and answers after the timer receive zero.
+    """
+    if not correct:
+        return 0
+
+    if elapsed_ms > time_limit_ms:
+        return 0
+
+    progress = min(max(elapsed_ms / max(time_limit_ms, 1), 0), 1)
+    return max(200, round(1000 - (progress * 800)))
+
+
+def classroom_view(room: dict, viewer_id: Optional[str] = None, host_view: bool = False) -> dict:
+    round_index = room.get("round_index", -1)
+    revealed = bool(room.get("revealed", False))
+
+    students = []
+    my_student = None
+
+    for student in room.get("students", []):
+        answered = student.get("answered_round", -1) == round_index
+
+        item = {
+            "player_id": student["player_id"],
+            "name": student["name"],
+            "registered": bool(student.get("registered")),
+            "total_points": student.get("total_points", 0),
+            "answered": answered,
+        }
+
+        # Only reveal round result details after the teacher reveals the word.
+        if revealed and answered:
+            item["round_correct"] = bool(student.get("last_correct"))
+            item["round_points"] = int(student.get("last_points", 0))
+
+        students.append(item)
+
+        if student["player_id"] == viewer_id:
+            my_student = student
+
+    answered_count = sum(
+        1
+        for student in room.get("students", [])
+        if student.get("answered_round", -1) == round_index
+    )
+
+    if host_view:
+        role = "host"
+    elif my_student:
+        role = "student"
+    else:
+        role = "spectator"
+
+    out = {
+        "code": room["code"],
+        "role": role,
+        "host_name": room.get("host_name", "Teacher"),
+        "word_count": room["word_count"],
+        "difficulty": room["difficulty"],
+        "time_limit_ms": room["time_limit_ms"],
+        "status": room["status"],
+        "round_index": round_index,
+        "round_started_at": room.get("round_started_at"),
+        "revealed": revealed,
+        "answered_count": answered_count,
+        "created_at": room["created_at"],
+        "students": students,
+    }
+
+    # SECURITY:
+    # Only the teacher receives the seed and current unrevealed word.
+    if host_view:
+        out["seed"] = room["seed"]
+        out["current_word"] = room.get("current_word")
+
+    # Everyone may receive the answer only after Reveal.
+    if revealed and room.get("current_word"):
+        out["correct_word"] = room["current_word"]
+
+    if my_student:
+        submitted = my_student.get("answered_round", -1) == round_index
+
+        out["my_submission"] = {
+            "submitted": submitted,
+        }
+
+        if revealed and submitted:
+            out["my_submission"].update({
+                "answer": my_student.get("last_answer", ""),
+                "correct": bool(my_student.get("last_correct")),
+                "points": int(my_student.get("last_points", 0)),
+                "total_points": int(my_student.get("total_points", 0)),
+            })
+
+    return out
+
+
+async def get_classroom_or_404(code: str) -> dict:
+    room = await db.classrooms.find_one({"code": code.upper()})
+    if not room:
+        raise HTTPException(status_code=404, detail="Classroom not found")
+    return room
+
+
+def classroom_host_id(user: dict) -> str:
+    return str(user["_id"])
+
+
+@api_router.post("/classrooms")
+async def create_classroom(
+    body: ClassroomCreateBody,
+    user: dict = Depends(get_current_user),
+):
+    if body.word_count not in (5, 10, 15, 25):
+        raise HTTPException(
+            status_code=400,
+            detail="word_count must be 5, 10, 15 or 25",
+        )
+
+    if body.difficulty not in ("easy", "medium", "hard", "extreme", "mixed"):
+        raise HTTPException(status_code=400, detail="Invalid difficulty")
+
+    code = new_code()
+
+    while await db.classrooms.find_one({"code": code}):
+        code = new_code()
+
+    room = {
+        "code": code,
+        "host_id": classroom_host_id(user),
+        "host_name": public_user(user)["name"],
+        "seed": random.randint(1, 2_000_000_000),
+        "word_count": body.word_count,
+        "difficulty": body.difficulty,
+        "time_limit_ms": body.time_limit_sec * 1000,
+        "status": "lobby",
+        "round_index": -1,
+        "round_started_at": None,
+        "current_word": None,
+        "revealed": False,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "started_at": None,
+        "students": [],
+    }
+
+    await db.classrooms.insert_one(room)
+
+    return classroom_view(
+        room,
+        viewer_id=classroom_host_id(user),
+        host_view=True,
+    )
+
+
+@api_router.get("/classrooms/{code}")
+async def get_classroom(
+    code: str,
+    player_id: Optional[str] = None,
+    user: Optional[dict] = Depends(get_optional_user),
+):
+    room = await get_classroom_or_404(code)
+
+    uid = str(user["_id"]) if user else None
+    viewer_id = uid or player_id
+
+    host_view = bool(uid and room["host_id"] == uid)
+
+    return classroom_view(
+        room,
+        viewer_id=viewer_id,
+        host_view=host_view,
+    )
+
+
+@api_router.post("/classrooms/{code}/join")
+async def join_classroom(
+    code: str,
+    body: ClassroomJoinBody,
+    user: Optional[dict] = Depends(get_optional_user),
+):
+    code = code.upper()
+    room = await get_classroom_or_404(code)
+
+    if room["status"] != "lobby":
+        raise HTTPException(
+            status_code=400,
+            detail="This classroom game has already started",
+        )
+
+    pid = str(user["_id"]) if user else body.player_id
+
+    # Teacher is not also inserted as a student.
+    if pid == room["host_id"]:
+        return classroom_view(room, viewer_id=pid, host_view=True)
+
+    name = (
+        public_user(user)["name"]
+        if user
+        else body.name
+    ).strip()[:24]
+
+    existing = next(
+        (student for student in room.get("students", [])
+         if student["player_id"] == pid),
+        None,
+    )
+
+    if existing:
+        await db.classrooms.update_one(
+            {"code": code, "students.player_id": pid},
+            {"$set": {"students.$.name": name}},
+        )
+    else:
+        if len(room.get("students", [])) >= 50:
+            raise HTTPException(
+                status_code=400,
+                detail="This classroom is full",
+            )
+
+        await db.classrooms.update_one(
+            {"code": code},
+            {
+                "$push": {
+                    "students": {
+                        "player_id": pid,
+                        "name": name,
+                        "registered": bool(user),
+                        "total_points": 0,
+                        "answered_round": -1,
+                        "last_answer": None,
+                        "last_correct": None,
+                        "last_points": 0,
+                    }
+                }
+            },
+        )
+
+    room = await get_classroom_or_404(code)
+
+    return classroom_view(
+        room,
+        viewer_id=pid,
+        host_view=False,
+    )
+
+
+@api_router.post("/classrooms/{code}/round/start")
+async def start_classroom_round(
+    code: str,
+    body: ClassroomRoundBody,
+    user: dict = Depends(get_current_user),
+):
+    code = code.upper()
+    room = await get_classroom_or_404(code)
+
+    host_id = classroom_host_id(user)
+
+    if room["host_id"] != host_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Only the teacher can control this classroom",
+        )
+
+    if room["status"] == "finished":
+        raise HTTPException(
+            status_code=400,
+            detail="This classroom game has finished",
+        )
+
+    if (
+        room.get("round_index", -1) >= 0
+        and not room.get("revealed", False)
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Reveal the current word before starting the next round",
+        )
+
+    next_index = room.get("round_index", -1) + 1
+
+    if next_index >= room["word_count"]:
+        raise HTTPException(
+            status_code=400,
+            detail="There are no more words",
+        )
+
+    word = body.word.strip()
+
+    if not word:
+        raise HTTPException(status_code=400, detail="Word is required")
+
+    students = []
+
+    for student in room.get("students", []):
+        student = dict(student)
+        student["answered_round"] = -1
+        student["last_answer"] = None
+        student["last_correct"] = None
+        student["last_points"] = 0
+        students.append(student)
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    update = {
+        "status": "running",
+        "round_index": next_index,
+        "round_started_at": now,
+        "current_word": word,
+        "revealed": False,
+        "students": students,
+    }
+
+    if not room.get("started_at"):
+        update["started_at"] = now
+
+    await db.classrooms.update_one(
+        {"code": code},
+        {"$set": update},
+    )
+
+    room = await get_classroom_or_404(code)
+
+    return classroom_view(
+        room,
+        viewer_id=host_id,
+        host_view=True,
+    )
+
+
+@api_router.post("/classrooms/{code}/submit")
+async def submit_classroom_answer(
+    code: str,
+    body: ClassroomSubmitBody,
+    user: Optional[dict] = Depends(get_optional_user),
+):
+    code = code.upper()
+    room = await get_classroom_or_404(code)
+
+    if room["status"] != "running":
+        raise HTTPException(
+            status_code=400,
+            detail="There is no active classroom round",
+        )
+
+    if room.get("revealed"):
+        raise HTTPException(
+            status_code=400,
+            detail="This word has already been revealed",
+        )
+
+    pid = str(user["_id"]) if user else body.player_id
+
+    student = next(
+        (student for student in room.get("students", [])
+         if student["player_id"] == pid),
+        None,
+    )
+
+    if not student:
+        raise HTTPException(
+            status_code=403,
+            detail="You are not a student in this classroom",
+        )
+
+    round_index = room["round_index"]
+
+    # A student may submit only once for each word.
+    if student.get("answered_round", -1) == round_index:
+        return classroom_view(
+            room,
+            viewer_id=pid,
+            host_view=False,
+        )
+
+    started_at = datetime.fromisoformat(room["round_started_at"])
+    now = datetime.now(timezone.utc)
+
+    elapsed_ms = max(
+        0,
+        int((now - started_at).total_seconds() * 1000),
+    )
+
+    time_limit_ms = room["time_limit_ms"]
+
+    typed = body.answer.strip()
+    expected = (room.get("current_word") or "").strip()
+
+    within_time = elapsed_ms <= time_limit_ms
+
+    correct = (
+        within_time
+        and typed.casefold() == expected.casefold()
+    )
+
+    points = classroom_points(
+        correct,
+        elapsed_ms,
+        time_limit_ms,
+    )
+
+    await db.classrooms.update_one(
+        {
+            "code": code,
+            "students.player_id": pid,
+        },
+        {
+            "$set": {
+                "students.$.answered_round": round_index,
+                "students.$.last_answer": typed,
+                "students.$.last_correct": correct,
+                "students.$.last_points": points,
+            },
+            "$inc": {
+                "students.$.total_points": points,
+            },
+        },
+    )
+
+    room = await get_classroom_or_404(code)
+
+    return classroom_view(
+        room,
+        viewer_id=pid,
+        host_view=False,
+    )
+
+
+@api_router.post("/classrooms/{code}/reveal")
+async def reveal_classroom_word(
+    code: str,
+    user: dict = Depends(get_current_user),
+):
+    code = code.upper()
+    room = await get_classroom_or_404(code)
+
+    host_id = classroom_host_id(user)
+
+    if room["host_id"] != host_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Only the teacher can reveal the word",
+        )
+
+    if room.get("round_index", -1) < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="No classroom round has started",
+        )
+
+    await db.classrooms.update_one(
+        {"code": code},
+        {"$set": {"revealed": True}},
+    )
+
+    room = await get_classroom_or_404(code)
+
+    return classroom_view(
+        room,
+        viewer_id=host_id,
+        host_view=True,
+    )
+
+
+@api_router.post("/classrooms/{code}/finish")
+async def finish_classroom(
+    code: str,
+    user: dict = Depends(get_current_user),
+):
+    code = code.upper()
+    room = await get_classroom_or_404(code)
+
+    host_id = classroom_host_id(user)
+
+    if room["host_id"] != host_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Only the teacher can finish the game",
+        )
+
+    if room.get("round_index") != room["word_count"] - 1:
+        raise HTTPException(
+            status_code=400,
+            detail="There are still words remaining",
+        )
+
+    if not room.get("revealed"):
+        raise HTTPException(
+            status_code=400,
+            detail="Reveal the final word first",
+        )
+
+    await db.classrooms.update_one(
+        {"code": code},
+        {
+            "$set": {
+                "status": "finished",
+                "finished_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
+    )
+
+    room = await get_classroom_or_404(code)
+
+    return classroom_view(
+        room,
+        viewer_id=host_id,
+        host_view=True,
+    )
+
+
 # ---------------- session scores + global leaderboards ----------------
 class ScoreBody(BaseModel):
     player_id: str
@@ -832,6 +1369,7 @@ async def startup():
     await db.daily_results.create_index([("player_id", 1), ("date", 1)], unique=True)
     await db.daily_results.create_index([("date", 1), ("score", -1), ("time_ms", 1)])
     await db.rooms.create_index("code", unique=True)
+    await db.classrooms.create_index("code", unique=True)
     await db.login_attempts.create_index("identifier")
     await db.password_reset_tokens.create_index("token_hash", unique=True)
     await db.password_reset_tokens.create_index("expires_at", expireAfterSeconds=0)

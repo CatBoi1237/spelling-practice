@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Swords, Users, Plus, LogIn } from "lucide-react";
+import { Swords, Users, Plus, LogIn, School } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 import { getPlayerId } from "@/lib/identity";
 import { useAuth } from "@/context/AuthContext";
@@ -20,6 +20,9 @@ export default function Multiplayer() {
   const [code, setCode] = useState("");
   const [name, setName] = useState(playerName);
   const [busy, setBusy] = useState(false);
+  const [classCode, setClassCode] = useState("");
+  const [classBusy, setClassBusy] = useState(false);
+  const [timeLimit, setTimeLimit] = useState(20);
 
   const saveName = () => {
     if (!user) renameGuest(name);
@@ -61,6 +64,60 @@ export default function Multiplayer() {
       setBusy(false);
     }
   };
+
+  const createClassroom = async () => {
+    if (!user) {
+      toast.error("Teachers need to sign in before hosting Classroom Mode.");
+      navigate("/signin");
+      return;
+    }
+
+    setClassBusy(true);
+
+    try {
+      const { data } = await api.post("/classrooms", {
+        word_count: wordCount,
+        difficulty,
+        time_limit_sec: timeLimit,
+      });
+
+      navigate(`/classroom/${data.code}`);
+    } catch (e) {
+      toast.error(apiError(e, "Could not create classroom."));
+    } finally {
+      setClassBusy(false);
+    }
+  };
+
+
+  const joinClassroom = async (e) => {
+    e.preventDefault();
+
+    const clean = classCode.trim().toUpperCase();
+
+    if (clean.length !== 6) {
+      toast.error("Classroom codes are 6 characters.");
+      return;
+    }
+
+    setClassBusy(true);
+    saveName();
+
+    try {
+      await api.get(`/classrooms/${clean}`, {
+        params: {
+          player_id: playerId,
+        },
+      });
+
+      navigate(`/classroom/${clean}`);
+    } catch (e) {
+      toast.error(apiError(e, "Classroom not found."));
+    } finally {
+      setClassBusy(false);
+    }
+  };
+
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">

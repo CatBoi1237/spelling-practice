@@ -12,6 +12,7 @@ import Settings from "@/pages/Settings";
 import Daily from "@/pages/Daily";
 import Multiplayer from "@/pages/Multiplayer";
 import Room from "@/pages/Room";
+import Classroom from "@/pages/Classroom";
 import SignIn from "@/pages/SignIn";
 import ResetPassword from "@/pages/ResetPassword";
 import Achievements from "@/pages/Achievements";
@@ -36,6 +37,7 @@ function App() {
               <Route path="/daily" element={<Daily />} />
               <Route path="/multiplayer" element={<Multiplayer />} />
               <Route path="/room/:code" element={<Room />} />
+              <Route path="/classroom/:code" element={<Classroom />} />
               <Route path="/signin" element={<SignIn />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/achievements" element={<Achievements />} />

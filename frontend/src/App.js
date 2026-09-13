@@ -6,7 +6,7 @@ import Layout from "@/components/Layout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Dashboard from "@/pages/Dashboard";
 import Practice from "@/pages/Practice";
-import Results from "@/pages/Results";
+import Results from "@/pages/ResultsV2";
 import Progress from "@/pages/Progress";
 import Settings from "@/pages/Settings";
 import Daily from "@/pages/Daily";

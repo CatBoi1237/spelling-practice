@@ -13,3 +13,57 @@
 .shake {
     animation: shake 0.35s ease-in-out;
 }
+
+@keyframes confettiFall {
+    0% {
+        opacity: 0;
+        transform: translate3d(0, -24px, 0) rotate(0deg);
+    }
+    8% { opacity: 1; }
+    100% {
+        opacity: 0;
+        transform: translate3d(34px, 520px, 0) rotate(540deg);
+    }
+}
+
+@keyframes podiumRise {
+    0% {
+        opacity: 0;
+        transform: translateY(26px) scale(0.96);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes softPulse {
+    0%, 100% { opacity: 0.55; transform: scale(1); }
+    50% { opacity: 0.95; transform: scale(1.04); }
+}
+
+.confetti-piece {
+    animation-name: confettiFall;
+    animation-timing-function: cubic-bezier(0.16, 0.8, 0.36, 1);
+    animation-iteration-count: 1;
+    animation-fill-mode: both;
+}
+
+.podium-rise {
+    opacity: 0;
+    animation: podiumRise 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.soft-pulse {
+    animation: softPulse 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .confetti-piece,
+    .podium-rise,
+    .soft-pulse {
+        animation: none !important;
+        opacity: 1;
+        transform: none;
+    }
+}

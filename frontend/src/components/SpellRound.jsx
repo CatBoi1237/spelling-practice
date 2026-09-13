@@ -178,7 +178,7 @@ export default function SpellRound({ word, index, total, maxPlays = 3, onResult,
               onChange={(e) => setInput(e.target.value)}
               autoComplete="off"
               autoCorrect="off"
-              autoCapitalize="off"
+              autoCapitalize="none"
               spellCheck={false}
               placeholder="type the spelling…"
               className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-5 py-5 text-center font-mono text-2xl tracking-[0.3em] text-slate-100 outline-none ring-amber-500/40 transition focus:border-amber-500/50 focus:ring-2"

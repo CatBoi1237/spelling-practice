@@ -862,7 +862,11 @@ function StudentRound({
             }
             disabled={remainingMs <= 0}
             autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="none"
             spellCheck={false}
+            inputMode="text"
+            enterKeyHint="done"
             placeholder={
               remainingMs > 0
                 ? "Type the word..."

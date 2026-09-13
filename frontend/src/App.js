@@ -12,6 +12,7 @@ import Progress from "@/pages/Progress";
 import Settings from "@/pages/Settings";
 import Daily from "@/pages/Daily";
 import Multiplayer from "@/pages/Multiplayer";
+import Join from "@/pages/Join";
 import RoomShell from "@/pages/RoomShell";
 import ClassroomShell from "@/pages/ClassroomShell";
 import CustomWordLists from "@/pages/CustomWordLists";
@@ -38,6 +39,7 @@ function App() {
               <Route path="/settings" element={<Settings />} />
               <Route path="/daily" element={<Daily />} />
               <Route path="/multiplayer" element={<Multiplayer />} />
+              <Route path="/join" element={<Join />} />
               <Route path="/word-lists" element={<CustomWordLists />} />
               <Route path="/room/:code" element={<RoomShell />} />
               <Route path="/classroom/:code" element={<ClassroomShell />} />

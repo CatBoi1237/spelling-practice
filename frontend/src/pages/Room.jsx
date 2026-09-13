@@ -241,7 +241,7 @@ export default function Room() {
 
         {room.status !== "lobby" && !myDone && words[index] && (
           <SpellRound
-            key={words[index].word}
+            key={`${room.seed}-${index}-${words[index].word}`}
             word={words[index]}
             index={index}
             total={words.length}

@@ -14,30 +14,84 @@ export default function SpellRound({ word, index, total, maxPlays = 3, onResult,
   const [result, setResult] = useState(null);
   const inputRef = useRef(null);
   const startRef = useRef(Date.now());
+  const roundTokenRef = useRef(0);
+  const speechTimerRef = useRef(null);
+  const advancingRef = useRef(false);
 
   useEffect(() => {
+    // Every word gets a unique speech session.
+    // Any delayed speech belonging to an older word becomes invalid.
+    roundTokenRef.current += 1;
+    const token = roundTokenRef.current;
+
+    advancingRef.current = false;
     setInput("");
     setPlays(1);
     setResult(null);
     startRef.current = Date.now();
-    const t = setTimeout(() => {
-      speak(word.word, { rate: settings.rate, voiceName: settings.voiceName, voiceLang: settings.voiceLang });
+
+    if (speechTimerRef.current) {
+      clearTimeout(speechTimerRef.current);
+      speechTimerRef.current = null;
+    }
+
+    // Stop the previous word before starting this one.
+    cancelSpeech();
+
+    // Chrome/Web Speech can take a moment to actually cancel an utterance.
+    speechTimerRef.current = setTimeout(() => {
+      if (token !== roundTokenRef.current) return;
+
+      speak(word.word, {
+        rate: settings.rate,
+        voiceName: settings.voiceName,
+        voiceLang: settings.voiceLang,
+      });
+
       inputRef.current?.focus();
-    }, 250);
+    }, 400);
+
     return () => {
-      clearTimeout(t);
+      // Invalidate any speech that belongs to this old round.
+      roundTokenRef.current += 1;
+
+      if (speechTimerRef.current) {
+        clearTimeout(speechTimerRef.current);
+        speechTimerRef.current = null;
+      }
+
       cancelSpeech();
     };
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [word.word]);
+  }, [word.word, index]);
 
   const play = () => {
     if (plays >= maxPlays) {
       toast(`You can only hear this word ${maxPlays} times.`);
       return;
     }
+
+    const token = roundTokenRef.current;
     setPlays((p) => p + 1);
-    speak(word.word, { rate: settings.rate, voiceName: settings.voiceName, voiceLang: settings.voiceLang });
+
+    if (speechTimerRef.current) {
+      clearTimeout(speechTimerRef.current);
+      speechTimerRef.current = null;
+    }
+
+    cancelSpeech();
+
+    // Give the browser time to fully cancel the previous utterance.
+    speechTimerRef.current = setTimeout(() => {
+      if (token !== roundTokenRef.current) return;
+
+      speak(word.word, {
+        rate: settings.rate,
+        voiceName: settings.voiceName,
+        voiceLang: settings.voiceLang,
+      });
+    }, 120);
   };
 
   const submit = (e) => {
@@ -46,6 +100,12 @@ export default function SpellRound({ word, index, total, maxPlays = 3, onResult,
     const attempt = input.trim().toLowerCase();
     if (!attempt) return;
     const isRight = attempt === word.word.trim().toLowerCase();
+
+    if (speechTimerRef.current) {
+      clearTimeout(speechTimerRef.current);
+      speechTimerRef.current = null;
+    }
+
     cancelSpeech();
     recordWordAttempt(word.word, isRight);
     if (settings.soundEffects) playTone(isRight ? "success" : "error");
@@ -53,7 +113,23 @@ export default function SpellRound({ word, index, total, maxPlays = 3, onResult,
   };
 
   const next = () => {
-    onResult({ correct: result.isRight, attempt: result.attempt, timeMs: result.timeMs, word });
+    if (!result || advancingRef.current) return;
+
+    advancingRef.current = true;
+
+    if (speechTimerRef.current) {
+      clearTimeout(speechTimerRef.current);
+      speechTimerRef.current = null;
+    }
+
+    cancelSpeech();
+
+    onResult({
+      correct: result.isRight,
+      attempt: result.attempt,
+      timeMs: result.timeMs,
+      word,
+    });
   };
 
   const diff = useMemo(() => {

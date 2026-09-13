@@ -38,7 +38,7 @@ export default function ClassroomHostQr() {
   }
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-30 sm:left-auto sm:right-6 sm:w-[430px] xl:top-24 xl:bottom-auto">
+    <div className="mx-auto mt-6 max-w-md px-4 sm:fixed sm:bottom-6 sm:right-6 sm:z-30 sm:mt-0 sm:w-[430px] sm:max-w-none sm:px-0 xl:top-24 xl:bottom-auto">
       <ClassroomQrCard roomCode={roomCode} />
     </div>
   );

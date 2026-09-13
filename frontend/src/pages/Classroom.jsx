@@ -13,6 +13,7 @@ import {
   Send,
   Speaker,
   Users,
+  XCircle,
 } from "lucide-react";
 
 import { api, apiError } from "@/lib/api";
@@ -44,6 +45,7 @@ export default function Classroom() {
 
   const [joinName, setJoinName] = useState(playerName || "");
   const [joining, setJoining] = useState(false);
+  const [readyBusy, setReadyBusy] = useState(false);
 
   const [answer, setAnswer] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -84,7 +86,6 @@ export default function Classroom() {
   }, [room?.round_index]);
 
 
-  // Student countdown.
   useEffect(() => {
     if (
       !room?.round_started_at ||
@@ -119,7 +120,6 @@ export default function Classroom() {
   ]);
 
 
-  // When a student's timer expires, lock the round as 0 points.
   useEffect(() => {
     if (
       room?.role !== "student" ||
@@ -223,6 +223,29 @@ export default function Classroom() {
   };
 
 
+  const setReady = async (ready) => {
+    setReadyBusy(true);
+
+    try {
+      const { data } = await api.post(
+        `/classrooms/${roomCode}/ready`,
+        {
+          player_id: playerId,
+          ready,
+        }
+      );
+
+      setRoom(data);
+    } catch (e) {
+      toast.error(
+        apiError(e, "Could not update ready status.")
+      );
+    } finally {
+      setReadyBusy(false);
+    }
+  };
+
+
   const startNextRound = async () => {
     const nextIndex = (room?.round_index ?? -1) + 1;
 
@@ -245,8 +268,6 @@ export default function Classroom() {
 
       setRoom(data);
 
-      // Small delay gives student polling time to show the input
-      // before the teacher's device pronounces the word.
       setTimeout(() => {
         speak(nextWord.word, {
           rate: settings.rate,
@@ -379,7 +400,6 @@ export default function Classroom() {
   }
 
 
-  // Direct classroom link opened by a student.
   if (room.role === "spectator") {
     return (
       <div className="mx-auto max-w-lg">
@@ -447,6 +467,7 @@ export default function Classroom() {
 
   const isHost = room.role === "host";
   const isStudent = room.role === "student";
+  const me = room.students.find((student) => student.player_id === playerId);
 
   const lastRound =
     room.round_index === room.word_count - 1;
@@ -456,6 +477,9 @@ export default function Classroom() {
       b.total_points - a.total_points ||
       a.name.localeCompare(b.name)
   );
+
+  const readyCount = room.ready_count || 0;
+  const allReady = room.students.length > 0 && readyCount === room.students.length;
 
 
   return (
@@ -503,17 +527,27 @@ export default function Classroom() {
       {room.status === "lobby" && (
         <div className="grid gap-6 lg:grid-cols-3">
           <section className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6 sm:p-8 lg:col-span-2">
-            <h2 className="flex items-center gap-2 font-heading text-2xl font-bold text-slate-50">
-              <Users className="h-5 w-5 text-amber-400" />
-              Waiting room
-            </h2>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h2 className="flex items-center gap-2 font-heading text-2xl font-bold text-slate-50">
+                  <Users className="h-5 w-5 text-amber-400" />
+                  Waiting room
+                </h2>
+                <p className="mt-3 text-slate-400">
+                  Students ready up when they are prepared. The game starts when everyone is ready.
+                </p>
+              </div>
+
+              <div className={allReady
+                ? "rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-bold text-emerald-300"
+                : "rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-2 text-sm font-bold text-slate-300"
+              }>
+                {readyCount}/{room.students.length} ready
+              </div>
+            </div>
 
             {isHost ? (
               <>
-                <p className="mt-3 text-slate-400">
-                  Put this room code on the board and wait for students to join.
-                </p>
-
                 <div className="mt-6 rounded-3xl border border-amber-500/20 bg-amber-500/5 p-8 text-center">
                   <div className="text-sm font-semibold text-slate-400">
                     Join at
@@ -530,17 +564,37 @@ export default function Classroom() {
 
                 <button
                   onClick={startNextRound}
-                  disabled={!room.students.length}
+                  disabled={!allReady}
                   className="mt-6 inline-flex items-center gap-2 rounded-xl bg-amber-500 px-6 py-3 font-bold text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <Play className="h-4 w-4" />
                   Start game
                 </button>
+
+                {!allReady && room.students.length > 0 && (
+                  <p className="mt-3 text-xs text-slate-500">
+                    Waiting for {room.students.length - readyCount} student{room.students.length - readyCount === 1 ? "" : "s"} to get ready.
+                  </p>
+                )}
               </>
             ) : (
-              <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/60 p-5 text-slate-300">
-                <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
-                Waiting for your teacher to start…
+              <div className="mt-6 space-y-4">
+                <button
+                  onClick={() => setReady(!me?.ready)}
+                  disabled={readyBusy}
+                  className={me?.ready
+                    ? "inline-flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-6 py-3 font-bold text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-50"
+                    : "inline-flex items-center gap-2 rounded-xl bg-amber-500 px-6 py-3 font-bold text-slate-950 hover:bg-amber-400 disabled:opacity-50"
+                  }
+                >
+                  {me?.ready ? <XCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                  {me?.ready ? "Not ready" : "I'm ready"}
+                </button>
+
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5 text-slate-300">
+                  <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+                  {allReady ? "Everyone's ready — waiting for your teacher to start…" : "Waiting for everyone to get ready…"}
+                </div>
               </div>
             )}
           </section>
@@ -634,6 +688,12 @@ function StudentList({ room }) {
         Students ({room.students.length})
       </h3>
 
+      {room.status === "lobby" && (
+        <p className="mt-1 text-xs text-slate-500">
+          {room.ready_count || 0}/{room.students.length} ready
+        </p>
+      )}
+
       {room.status === "running" && (
         <p className="mt-1 text-xs text-slate-500">
           {room.answered_count}/{room.students.length} answered
@@ -649,7 +709,11 @@ function StudentList({ room }) {
             >
               <span
                 className={
-                  student.answered
+                  room.status === "lobby"
+                    ? student.ready
+                      ? "h-2.5 w-2.5 rounded-full bg-emerald-400"
+                      : "h-2.5 w-2.5 rounded-full bg-slate-600"
+                    : student.answered
                     ? "h-2.5 w-2.5 rounded-full bg-emerald-400"
                     : "h-2.5 w-2.5 rounded-full bg-slate-600"
                 }
@@ -659,9 +723,15 @@ function StudentList({ room }) {
                 {student.name}
               </span>
 
-              <span className="font-mono text-xs text-amber-300">
-                {student.total_points}
-              </span>
+              {room.status === "lobby" ? (
+                <span className={student.ready ? "text-[10px] font-bold uppercase text-emerald-400" : "text-[10px] font-bold uppercase text-slate-500"}>
+                  {student.ready ? "ready" : "not ready"}
+                </span>
+              ) : (
+                <span className="font-mono text-xs text-amber-300">
+                  {student.total_points}
+                </span>
+              )}
             </div>
           ))
         ) : (
@@ -714,13 +784,29 @@ function TeacherRound({
               Audio plays only from this teacher device.
             </p>
 
-            <button
-              onClick={playWord}
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-amber-500 px-7 py-3 font-bold text-slate-950 hover:bg-amber-400"
-            >
-              <Speaker className="h-4 w-4" />
-              Play / replay word
-            </button>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <button
+                onClick={playWord}
+                className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-7 py-3 font-bold text-slate-950 hover:bg-amber-400"
+              >
+                <Speaker className="h-4 w-4" />
+                Repeat
+              </button>
+
+              <button
+                onClick={playWordSlow}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-6 py-3 font-bold text-slate-200 hover:border-amber-500/40 hover:text-amber-300"
+              >
+                🐢 Slow
+              </button>
+
+              <button
+                onClick={playWordVerySlow}
+                className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-6 py-3 font-bold text-amber-300 hover:bg-amber-500/20"
+              >
+                🐢 Very slow
+              </button>
+            </div>
           </div>
 
           <button

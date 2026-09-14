@@ -36,10 +36,12 @@ export const NAV_GROUPS = [
   },
   {
     id: "teacher",
-    label: "Teacher",
+    label: "Teacher workspace",
     items: [
-      { to: "/teacher", label: "Teacher Dashboard", short: "Teacher", icon: School, testId: "nav-teacher" },
+      { to: "/teacher", label: "Dashboard", short: "Teacher", icon: School, testId: "nav-teacher" },
+      { to: "/teacher/classes", label: "Classes & Rosters", short: "Classes", icon: Users, testId: "nav-teacher-classes" },
       { to: "/assignments", label: "Assignments", icon: ClipboardList, testId: "nav-assignments" },
+      { to: "/teacher/reports", label: "Classroom Reports", short: "Reports", icon: BarChart3, testId: "nav-teacher-reports" },
       { to: "/word-lists", label: "Word Lists", short: "Word Lists", icon: ListChecks, testId: "nav-word-lists" },
     ],
   },
@@ -47,6 +49,7 @@ export const NAV_GROUPS = [
     id: "me",
     label: "My SpellBee",
     items: [
+      { to: "/my-classes", label: "My Classes", icon: School, testId: "nav-my-classes", roles: ["student"] },
       { to: "/progress", label: "Progress", icon: BarChart3, testId: "nav-progress" },
       { to: "/profile", label: "Profile", icon: UserRound, testId: "nav-profile" },
       { to: "/achievements", label: "Achievements", icon: Medal, testId: "nav-achievements" },
@@ -206,7 +209,14 @@ export default function Layout() {
   }, [location.pathname]);
 
   const isTeacher = user?.account_type === "teacher";
-  const visibleGroups = NAV_GROUPS.filter((group) => group.id !== "teacher" || isTeacher);
+  const accountRole = user?.account_type || null;
+  const visibleGroups = NAV_GROUPS
+    .filter((group) => group.id !== "teacher" || isTeacher)
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !item.roles || item.roles.includes(accountRole)),
+    }))
+    .filter((group) => group.items.length);
   const moreGroups = visibleGroups
     .map((group) => ({
       ...group,

@@ -24,8 +24,19 @@ root.render(
 
 if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
+    const hadController = Boolean(navigator.serviceWorker.controller);
+
     navigator.serviceWorker.register("/sw.js").catch(() => {
       // SpellBee still works normally if service-worker registration is unavailable.
     });
+
+    if (hadController) {
+      let announced = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (announced) return;
+        announced = true;
+        window.dispatchEvent(new CustomEvent("spellbee:update-ready"));
+      });
+    }
   });
 }

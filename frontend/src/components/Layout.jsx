@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Sun, Moon, Monitor, Settings as SettingsIcon, BarChart3, Home as HomeIcon, CalendarDays, LogIn, LogOut,
-  Target, Trophy, Users, Library, Medal, GraduationCap, MoreHorizontal, X, ListChecks, ScanLine,
+  Target, Trophy, Users, Library, Medal, GraduationCap, MoreHorizontal, X, ListChecks, ScanLine, School,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
@@ -16,6 +16,7 @@ export const NAV = [
   { to: "/leaderboards", label: "Leaderboards", icon: Trophy, testId: "nav-leaderboards" },
   { to: "/multiplayer", label: "Multiplayer", icon: Users, testId: "nav-multiplayer" },
   { to: "/join", label: "Join Game", short: "Join", icon: ScanLine, testId: "nav-join" },
+  { to: "/teacher", label: "Teacher Dashboard", short: "Teacher", icon: School, testId: "nav-teacher" },
   { to: "/word-lists", label: "My Word Lists", short: "Word Lists", icon: ListChecks, testId: "nav-word-lists" },
   { to: "/library", label: "Word Library", icon: Library, testId: "nav-library" },
   { to: "/learn", label: "Learn", icon: GraduationCap, testId: "nav-learn" },
@@ -129,6 +130,9 @@ export default function Layout() {
               {to === "/join" && (
                 <span className="ml-auto rounded-full border border-indigo-500/20 bg-indigo-500/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-indigo-300">Code</span>
               )}
+              {to === "/teacher" && (
+                <span className="ml-auto rounded-full border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-emerald-300">Teach</span>
+              )}
               {to === "/word-lists" && (
                 <span className="ml-auto rounded-full border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-amber-300">New</span>
               )}
@@ -214,6 +218,7 @@ export default function Layout() {
                 <Icon className="h-5 w-5" />
                 {short || label}
                 {to === "/join" && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-indigo-400" />}
+                {to === "/teacher" && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-emerald-400" />}
                 {to === "/word-lists" && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-amber-400" />}
               </NavLink>
             ))}

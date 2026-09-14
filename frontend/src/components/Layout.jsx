@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Sun, Moon, Monitor, Settings as SettingsIcon, BarChart3, Home as HomeIcon, CalendarDays, LogIn, LogOut,
-  Target, Trophy, Users, Library, Medal, GraduationCap, MoreHorizontal, X, ListChecks, ScanLine, School, UserRound, Bookmark, Search,
+  Target, Trophy, Users, Library, Medal, GraduationCap, MoreHorizontal, X, ListChecks, ScanLine, School, UserRound, Bookmark, Search, ClipboardList,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
@@ -38,6 +38,7 @@ export const NAV_GROUPS = [
     label: "Teacher",
     items: [
       { to: "/teacher", label: "Teacher Dashboard", short: "Teacher", icon: School, testId: "nav-teacher" },
+      { to: "/assignments", label: "Assignments", icon: ClipboardList, testId: "nav-assignments" },
       { to: "/word-lists", label: "Word Lists", short: "Word Lists", icon: ListChecks, testId: "nav-word-lists" },
     ],
   },
@@ -145,7 +146,7 @@ function NavItem({ item, onClick, compact = false }) {
             : "text-slate-400 hover:bg-slate-900 hover:text-slate-100"
       )}
     >
-      <span className={cn("grid shrink-0 place-items-center", compact && "h-8 w-8 rounded-lg bg-slate-900")}> 
+      <span className={cn("grid shrink-0 place-items-center", compact && "h-8 w-8 rounded-lg bg-slate-900")}>
         <Icon className={compact ? "h-4 w-4" : "h-4 w-4 shrink-0"} />
       </span>
       <span className="min-w-0 truncate">{short || label}</span>

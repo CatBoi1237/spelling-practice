@@ -1,18 +1,21 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
   BarChart3,
   BookOpenCheck,
+  CalendarClock,
   ClipboardList,
   GraduationCap,
   ListChecks,
+  Loader2,
   School,
   Users,
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
 import { getCustomWordLists } from "@/lib/customWordLists";
+import { api } from "@/lib/api";
 
 const REPORT_PREFIX = "spellbee.classroom.report.";
 
@@ -53,10 +56,47 @@ function recentClassroomReports() {
     .slice(0, 6);
 }
 
+function dueLabel(value) {
+  if (!value) return "No due date";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "No due date";
+  return date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+}
+
 export default function TeacherDashboard() {
   const { user } = useAuth();
   const lists = useMemo(() => getCustomWordLists(), []);
   const reports = useMemo(() => recentClassroomReports(), []);
+  const [assignments, setAssignments] = useState([]);
+  const [assignmentsLoading, setAssignmentsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      setAssignments([]);
+      return;
+    }
+
+    let alive = true;
+    setAssignmentsLoading(true);
+    api.get("/assignments")
+      .then(({ data }) => {
+        if (alive) setAssignments(data.assignments || []);
+      })
+      .catch(() => {
+        if (alive) setAssignments([]);
+      })
+      .finally(() => {
+        if (alive) setAssignmentsLoading(false);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [user]);
+
+  const activeAssignments = assignments.filter((assignment) => assignment.status === "active");
+  const assignmentStudents = assignments.reduce((sum, assignment) => sum + Number(assignment.student_count || 0), 0);
+  const recentAssignments = assignments.slice(0, 5);
 
   if (!user) {
     return (
@@ -88,7 +128,7 @@ export default function TeacherDashboard() {
               Ready for class, {user.name}?
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">
-              Host a live spelling game, create homework, open your synced lists, or jump back into recent classroom results.
+              Live classes, homework, synced word lists and student results are now grouped into one teacher workspace.
             </p>
           </div>
 
@@ -103,9 +143,9 @@ export default function TeacherDashboard() {
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat icon={ListChecks} label="Saved lists" value={lists.length} hint="Cloud-synced teacher lists" />
-        <Stat icon={BarChart3} label="Recent reports" value={reports.length} hint="Classroom results" />
-        <Stat icon={Users} label="Student joining" value="Guest" hint="No account required" />
-        <Stat icon={BookOpenCheck} label="Classroom mode" value="Live" hint="Teacher-controlled audio" />
+        <Stat icon={ClipboardList} label="Active assignments" value={assignmentsLoading ? "…" : activeAssignments.length} hint={`${assignments.length} total assignment${assignments.length === 1 ? "" : "s"}`} />
+        <Stat icon={Users} label="Assignment students" value={assignmentsLoading ? "…" : assignmentStudents} hint="Completions across your assignments" />
+        <Stat icon={BarChart3} label="Classroom reports" value={reports.length} hint="Recent live-class results" />
       </section>
 
       <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
@@ -133,13 +173,54 @@ export default function TeacherDashboard() {
         <QuickAction
           icon={Users}
           title="Join page"
-          body="Open the one-code join screen you can show students before a lesson starts."
+          body="Show students one join page for Race, Classroom and Assignment codes."
           to="/join"
           action="Open join"
         />
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-2">
+      <section className="grid gap-6 xl:grid-cols-3">
+        <div className="rounded-3xl border border-slate-800 bg-slate-900/40 p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-300">Assignments</div>
+              <h2 className="mt-1 font-heading text-2xl font-bold text-slate-50">Recent classwork</h2>
+            </div>
+            <Link to="/assignments" className="text-sm font-bold text-emerald-300 hover:text-emerald-200">View all →</Link>
+          </div>
+
+          <div className="mt-5 space-y-3">
+            {assignmentsLoading ? (
+              <div className="grid place-items-center py-10 text-slate-600"><Loader2 className="h-5 w-5 animate-spin" /></div>
+            ) : recentAssignments.length ? recentAssignments.map((assignment) => (
+              <Link
+                key={assignment.code}
+                to={`/assignments/${assignment.code}/report`}
+                className="block rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 transition hover:border-emerald-500/30"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="truncate font-semibold text-slate-100">{assignment.title}</div>
+                    <div className="mt-1 flex flex-wrap gap-x-2 text-[11px] text-slate-500">
+                      <span className="font-mono font-bold tracking-wider text-amber-300">{assignment.code}</span>
+                      <span>· {assignment.student_count || 0} students</span>
+                      <span>· {assignment.submission_count || 0} attempts</span>
+                    </div>
+                  </div>
+                  <span className={assignment.status === "active" ? "rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-black uppercase text-emerald-300" : "rounded-full bg-slate-800 px-2 py-0.5 text-[9px] font-black uppercase text-slate-500"}>
+                    {assignment.status}
+                  </span>
+                </div>
+                <div className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-600"><CalendarClock className="h-3 w-3" /> {dueLabel(assignment.due_at)}</div>
+              </Link>
+            )) : (
+              <div className="rounded-2xl border border-dashed border-slate-800 p-7 text-center text-sm text-slate-500">
+                No assignments yet. Create homework for your first class.
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="rounded-3xl border border-slate-800 bg-slate-900/40 p-6">
           <div className="flex items-center justify-between gap-4">
             <div>
@@ -154,13 +235,13 @@ export default function TeacherDashboard() {
               <div key={list.id} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3">
                 <div className="min-w-0">
                   <div className="truncate font-semibold text-slate-100">{list.name}</div>
-                  <div className="mt-0.5 text-xs text-slate-500">{list.words.length} words</div>
+                  <div className="mt-0.5 text-xs text-slate-500">{list.words.length} words · synced</div>
                 </div>
                 <Link to="/word-lists" className="shrink-0 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-bold text-slate-300 hover:border-amber-500/40 hover:text-amber-300">Open</Link>
               </div>
             )) : (
               <div className="rounded-2xl border border-dashed border-slate-800 p-7 text-center text-sm text-slate-500">
-                No custom lists yet. Create one for your next class.
+                No custom lists yet. Create one and it will follow your signed-in account.
               </div>
             )}
           </div>
@@ -170,11 +251,11 @@ export default function TeacherDashboard() {
           <div>
             <div className="text-[10px] font-black uppercase tracking-[0.24em] text-indigo-300">Classroom history</div>
             <h2 className="mt-1 font-heading text-2xl font-bold text-slate-50">Recent reports</h2>
-            <p className="mt-1 text-xs text-slate-500">Classroom reports are saved on the teacher device that ran the class.</p>
+            <p className="mt-1 text-xs text-slate-500">Live Classroom reports are currently saved on the teacher device that ran the class.</p>
           </div>
 
           <div className="mt-5 space-y-3">
-            {reports.length ? reports.map((report) => (
+            {reports.length ? reports.slice(0, 5).map((report) => (
               <Link
                 key={report.code}
                 to={`/classroom/${report.code}`}
@@ -188,7 +269,7 @@ export default function TeacherDashboard() {
               </Link>
             )) : (
               <div className="rounded-2xl border border-dashed border-slate-800 p-7 text-center text-sm text-slate-500">
-                Classroom reports will appear here after you run a game on this device.
+                Classroom reports will appear here after you run a live game on this device.
               </div>
             )}
           </div>

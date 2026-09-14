@@ -7,10 +7,12 @@ import {
   ClipboardList,
   Copy,
   ExternalLink,
+  Files,
   Loader2,
   LockKeyhole,
   Plus,
   RefreshCcw,
+  Search,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -46,11 +48,14 @@ export default function TeacherAssignments() {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [actionBusy, setActionBusy] = useState("");
   const [title, setTitle] = useState("");
   const [source, setSource] = useState("grade5");
   const [count, setCount] = useState(10);
   const [attempts, setAttempts] = useState(2);
   const [dueAt, setDueAt] = useState("");
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const load = async () => {
     if (!user) return;
@@ -75,6 +80,17 @@ export default function TeacherAssignments() {
     ? selectedList.words
     : (WORDS_BY_DIFFICULTY[source] || []).map((word) => word.word);
   const effectiveCount = selectedList ? selectedList.words.length : count;
+
+  const visibleAssignments = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return assignments.filter((assignment) => {
+      if (statusFilter !== "all" && assignment.status !== statusFilter) return false;
+      if (!needle) return true;
+      return [assignment.title, assignment.code, assignment.level]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(needle));
+    });
+  }, [assignments, query, statusFilter]);
 
   const create = async (event) => {
     event.preventDefault();
@@ -118,7 +134,28 @@ export default function TeacherAssignments() {
     }
   };
 
+  const duplicate = async (assignment) => {
+    const key = `duplicate:${assignment.code}`;
+    setActionBusy(key);
+    try {
+      const { data } = await api.post("/assignments", {
+        title: `${assignment.title} (copy)`.slice(0, 80),
+        words: assignment.words || [],
+        due_at: assignment.due_at || null,
+        attempts_allowed: assignment.attempts_allowed || 1,
+        level: assignment.level || "custom",
+      });
+      setAssignments((current) => [{ ...data, submission_count: 0, student_count: 0 }, ...current]);
+      toast.success(`Copied as ${data.code}.`);
+    } catch (error) {
+      toast.error(apiError(error, "Could not duplicate assignment."));
+    } finally {
+      setActionBusy("");
+    }
+  };
+
   const toggle = async (assignment) => {
+    setActionBusy(`toggle:${assignment.code}`);
     try {
       const { data } = await api.post(`/assignments/${assignment.code}/status`, {
         enabled: assignment.status !== "active",
@@ -127,17 +164,22 @@ export default function TeacherAssignments() {
       toast.success(data.status === "active" ? "Assignment reopened." : "Assignment closed.");
     } catch (error) {
       toast.error(apiError(error, "Could not update assignment."));
+    } finally {
+      setActionBusy("");
     }
   };
 
   const remove = async (assignment) => {
     if (!window.confirm(`Delete “${assignment.title}” and its student results?`)) return;
+    setActionBusy(`delete:${assignment.code}`);
     try {
       await api.delete(`/assignments/${assignment.code}`);
       setAssignments((rows) => rows.filter((row) => row.code !== assignment.code));
       toast.success("Assignment deleted.");
     } catch (error) {
       toast.error(apiError(error, "Could not delete assignment."));
+    } finally {
+      setActionBusy("");
     }
   };
 
@@ -218,7 +260,7 @@ export default function TeacherAssignments() {
         </form>
 
         <div className="rounded-3xl border border-slate-800 bg-slate-900/35 p-6 sm:p-7">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-400">Your classwork</div>
               <h2 className="mt-1 font-heading text-2xl font-bold text-slate-50">Assignments</h2>
@@ -226,13 +268,32 @@ export default function TeacherAssignments() {
             <div className="rounded-full border border-slate-800 bg-slate-950 px-3 py-1 text-xs font-bold text-slate-400">{assignments.length} total</div>
           </div>
 
+          <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]">
+            <label className="relative block">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search title, code or level…"
+                className="w-full rounded-xl border border-slate-800 bg-slate-950 py-3 pl-10 pr-4 text-sm text-slate-100 outline-none focus:border-indigo-500/40"
+              />
+            </label>
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-semibold text-slate-300 outline-none">
+              <option value="all">All statuses</option>
+              <option value="active">Active</option>
+              <option value="closed">Closed</option>
+            </select>
+          </div>
+
           {loading ? (
             <div className="grid place-items-center py-20 text-slate-500"><Loader2 className="h-6 w-6 animate-spin" /></div>
           ) : assignments.length === 0 ? (
             <div className="mt-6 rounded-2xl border border-dashed border-slate-800 p-10 text-center text-sm text-slate-500">No assignments yet. Create one and share the student link.</div>
+          ) : visibleAssignments.length === 0 ? (
+            <div className="mt-6 rounded-2xl border border-dashed border-slate-800 p-10 text-center text-sm text-slate-500">No assignments match those filters.</div>
           ) : (
             <div className="mt-5 space-y-3">
-              {assignments.map((assignment) => (
+              {visibleAssignments.map((assignment) => (
                 <article key={assignment.code} className="rounded-2xl border border-slate-800 bg-slate-950/55 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -255,8 +316,9 @@ export default function TeacherAssignments() {
                     <AssignmentQrButton code={assignment.code} title={assignment.title} />
                     <Link to={`/assignment/${assignment.code}`} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 hover:text-white"><ExternalLink className="h-3.5 w-3.5" /> Student view</Link>
                     <Link to={`/assignments/${assignment.code}/report`} className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-xs font-bold text-indigo-300"><BarChart3 className="h-3.5 w-3.5" /> Report</Link>
-                    <button onClick={() => toggle(assignment)} className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-xs font-bold text-amber-300"><CheckCircle2 className="h-3.5 w-3.5" /> {assignment.status === "active" ? "Close" : "Reopen"}</button>
-                    <button onClick={() => remove(assignment)} className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-rose-500/25 px-3 py-2 text-xs font-bold text-rose-300"><Trash2 className="h-3.5 w-3.5" /> Delete</button>
+                    <button onClick={() => duplicate(assignment)} disabled={actionBusy === `duplicate:${assignment.code}`} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/25 bg-emerald-500/5 px-3 py-2 text-xs font-bold text-emerald-300 disabled:opacity-40"><Files className="h-3.5 w-3.5" /> Duplicate</button>
+                    <button onClick={() => toggle(assignment)} disabled={actionBusy === `toggle:${assignment.code}`} className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-xs font-bold text-amber-300 disabled:opacity-40"><CheckCircle2 className="h-3.5 w-3.5" /> {assignment.status === "active" ? "Close" : "Reopen"}</button>
+                    <button onClick={() => remove(assignment)} disabled={actionBusy === `delete:${assignment.code}`} className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-rose-500/25 px-3 py-2 text-xs font-bold text-rose-300 disabled:opacity-40"><Trash2 className="h-3.5 w-3.5" /> Delete</button>
                   </div>
                 </article>
               ))}

@@ -5,6 +5,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import Layout from "@/components/Layout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
+import PwaUpdatePrompt from "@/components/PwaUpdatePrompt";
 import Dashboard from "@/pages/Dashboard";
 import Practice from "@/pages/Practice";
 import Results from "@/pages/ResultsV2";
@@ -61,6 +62,7 @@ function App() {
             </Route>
           </Routes>
           <PwaInstallPrompt />
+          <PwaUpdatePrompt />
         </BrowserRouter>
       </AuthProvider>
       <Toaster richColors position="top-right" />

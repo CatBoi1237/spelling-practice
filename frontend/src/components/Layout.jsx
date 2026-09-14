@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Sun, Moon, Monitor, Settings as SettingsIcon, BarChart3, Home as HomeIcon, CalendarDays, LogIn, LogOut,
-  Target, Trophy, Users, Library, Medal, GraduationCap, MoreHorizontal, X, ListChecks, ScanLine, School,
+  Target, Trophy, Users, Library, Medal, GraduationCap, MoreHorizontal, X, ListChecks, ScanLine, School, UserRound,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
@@ -21,6 +21,7 @@ export const NAV = [
   { to: "/library", label: "Word Library", icon: Library, testId: "nav-library" },
   { to: "/learn", label: "Learn", icon: GraduationCap, testId: "nav-learn" },
   { to: "/progress", label: "Progress", icon: BarChart3, testId: "nav-progress" },
+  { to: "/profile", label: "Profile", icon: UserRound, testId: "nav-profile" },
   { to: "/achievements", label: "Achievements", icon: Medal, testId: "nav-achievements" },
   { to: "/settings", label: "Settings", icon: SettingsIcon, testId: "nav-settings" },
 ];

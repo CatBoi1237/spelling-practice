@@ -2,6 +2,8 @@
 import { WORDS, WORDS_BY_DIFFICULTY, WORD_MAP, MODES } from "@/data/words";
 import { getMissed, getSeen, markSeen } from "@/lib/storage";
 
+const LEVEL_ORDER = ["grade4", "grade5", "grade6", "year7", "easy", "medium", "hard", "extreme"];
+
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -9,6 +11,78 @@ function shuffle(arr) {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+function addUnique(target, source, amount, used) {
+  if (amount <= 0) return;
+  for (const word of shuffle(source)) {
+    const key = word?.word?.toLowerCase();
+    if (!key || used.has(key)) continue;
+    used.add(key);
+    target.push(word);
+    if (target.length >= amount) break;
+  }
+}
+
+function smartQueue(difficulty, limit) {
+  const seen = new Set(getSeen());
+  const missedRows = getMissed();
+  const missedWords = missedRows
+    .map((row) => WORD_MAP.get(row.word.toLowerCase()))
+    .filter(Boolean);
+
+  const patternCounts = {};
+  missedWords.forEach((word) => {
+    (word.patterns || []).forEach((pattern) => {
+      patternCounts[pattern] = (patternCounts[pattern] || 0) + 1;
+    });
+  });
+  const weakPatterns = Object.entries(patternCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 2)
+    .map(([pattern]) => pattern);
+
+  const patternWords = weakPatterns.length
+    ? WORDS.filter((word) => (word.patterns || []).some((pattern) => weakPatterns.includes(pattern)))
+    : [];
+
+  const levelPool = WORDS_BY_DIFFICULTY[difficulty] || WORDS;
+  const currentIndex = LEVEL_ORDER.indexOf(difficulty);
+  const challengeId = currentIndex >= 0 && currentIndex < LEVEL_ORDER.length - 1
+    ? LEVEL_ORDER[currentIndex + 1]
+    : difficulty;
+  const challengePool = WORDS_BY_DIFFICULTY[challengeId] || levelPool;
+
+  // Prefer fresh words outside the explicit mistake bucket. Mistakes are intentionally
+  // allowed to repeat because Smart Practice exists to reinforce them.
+  const freshLevel = levelPool.filter((word) => !seen.has(word.word));
+  const freshPatterns = patternWords.filter((word) => !seen.has(word.word));
+  const freshChallenge = challengePool.filter((word) => !seen.has(word.word));
+
+  const queue = [];
+  const used = new Set();
+  const mistakeTarget = Math.round(limit * 0.5);
+  const levelTarget = mistakeTarget + Math.round(limit * 0.25);
+  const patternTarget = levelTarget + Math.round(limit * 0.15);
+
+  addUnique(queue, missedWords, mistakeTarget, used);
+  addUnique(queue, freshLevel.length ? freshLevel : levelPool, levelTarget, used);
+  addUnique(queue, freshPatterns.length ? freshPatterns : patternWords, patternTarget, used);
+  addUnique(queue, freshChallenge.length ? freshChallenge : challengePool, limit, used);
+
+  if (queue.length < limit) {
+    const fallbackFresh = WORDS.filter((word) => !seen.has(word.word));
+    addUnique(queue, fallbackFresh.length ? fallbackFresh : WORDS, limit, used);
+  }
+
+  const finalQueue = shuffle(queue).slice(0, limit);
+  markSeen(finalQueue.map((word) => word.word));
+  return {
+    queue: finalQueue,
+    notice: missedWords.length
+      ? `Smart Practice mixed ${Math.min(missedWords.length, mistakeTarget)} priority mistake word${Math.min(missedWords.length, mistakeTarget) === 1 ? "" : "s"} with level, pattern and challenge practice.`
+      : "Smart Practice will personalise more strongly as it learns from your mistakes. For now, it is mixing your level with challenge words.",
+  };
 }
 
 export function getMode(id) {
@@ -34,6 +108,10 @@ export function buildQueue({ mode, difficulty, pattern, word }) {
 
   if (word && WORD_MAP.get(word.toLowerCase())) {
     return { queue: [WORD_MAP.get(word.toLowerCase())], notice };
+  }
+
+  if (mode.source === "smart") {
+    return smartQueue(difficulty, mode.limit || 15);
   }
 
   if (mode.source === "missed") {

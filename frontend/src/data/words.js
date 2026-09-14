@@ -84,6 +84,7 @@ export const MODES = [
   { id: "endless", label: "Endless", description: "Keep spelling until you stop.", limit: null, group: "core" },
   { id: "challenge", label: "Challenge", description: "15 words, 15s each, mixed difficulty.", limit: 15, timer: 15, mixed: true, group: "core" },
   { id: "test", label: "Test Mode", description: "Word spoken once. No replays, no hints. Timed.", limit: 20, timer: 20, singlePlay: true, noHints: true, group: "core" },
+  { id: "smart", label: "Smart Practice", description: "A personalised mix of mistakes, weak patterns, your level and challenge words.", limit: 15, source: "smart", group: "learn" },
   { id: "mistakes", label: "Mistake Mode", description: "Only the words you've missed before.", limit: 10, source: "missed", group: "learn" },
   { id: "pattern", label: "Pattern Mode", description: "Drill one spelling pattern at a time.", limit: 10, source: "pattern", group: "learn" },
   { id: "survival", label: "Survival", description: "One mistake ends the run.", limit: null, lives: 1, group: "arena" },

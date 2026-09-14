@@ -15,6 +15,7 @@ import Multiplayer from "@/pages/Multiplayer";
 import Join from "@/pages/Join";
 import RoomShell from "@/pages/RoomShell";
 import ClassroomShell from "@/pages/ClassroomShell";
+import ClassroomProjector from "@/pages/ClassroomProjector";
 import CustomWordLists from "@/pages/CustomWordLists";
 import SignIn from "@/pages/SignIn";
 import ResetPassword from "@/pages/ResetPassword";
@@ -31,6 +32,7 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            <Route path="/classroom/:code/projector" element={<ClassroomProjector />} />
             <Route element={<Layout />}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/practice" element={<Practice />} />

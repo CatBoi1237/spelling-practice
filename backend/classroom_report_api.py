@@ -34,6 +34,7 @@ def _snapshot_current_round(room: dict):
     rows = []
     for student in room.get("students", []):
         answered = student.get("answered_round", -1) == round_index
+        timed_this_round = student.get("last_time_round", -1) == round_index
         rows.append({
             "player_id": student.get("player_id"),
             "name": student.get("name", "Student"),
@@ -42,7 +43,7 @@ def _snapshot_current_round(room: dict):
             "answer": student.get("last_answer") if answered else None,
             "correct": bool(student.get("last_correct")) if answered else False,
             "points": int(student.get("last_points", 0)) if answered else 0,
-            "time_ms": int(student.get("last_time_ms", 0)) if answered else 0,
+            "time_ms": int(student.get("last_time_ms", 0)) if answered and timed_this_round else 0,
             "total_points": int(student.get("total_points", 0)),
         })
 
@@ -210,16 +211,24 @@ def register_classroom_report_routes(
             room = await db.classrooms.find_one({"code": code})
             if room and body:
                 pid = str(user["_id"]) if user else body.player_id
+                round_index = int(room.get("round_index", -1))
                 student = next(
                     (row for row in room.get("students", []) if row.get("player_id") == pid),
                     None,
                 )
-                if student and student.get("answered_round", -1) == room.get("round_index", -2) and not student.get("last_time_ms"):
+                if (
+                    student
+                    and student.get("answered_round", -1) == round_index
+                    and student.get("last_time_round", -2) != round_index
+                ):
                     started = _parse(room.get("round_started_at"))
                     elapsed_ms = max(0, int((_utcnow() - started).total_seconds() * 1000)) if started else 0
                     await db.classrooms.update_one(
                         {"code": code, "students.player_id": pid},
-                        {"$set": {"students.$.last_time_ms": elapsed_ms}},
+                        {"$set": {
+                            "students.$.last_time_ms": elapsed_ms,
+                            "students.$.last_time_round": round_index,
+                        }},
                     )
             return result
 

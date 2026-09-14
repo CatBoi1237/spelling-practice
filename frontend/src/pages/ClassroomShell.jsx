@@ -6,6 +6,7 @@ import ClassroomHostQr from "@/components/ClassroomHostQr";
 import ClassroomResultsReport from "@/components/ClassroomResultsReport";
 import ClassroomEndgame from "@/components/ClassroomEndgame";
 import ClassroomProjectorButton from "@/components/ClassroomProjectorButton";
+import ClassroomFocusGuard from "@/components/ClassroomFocusGuard";
 
 export default function ClassroomShell() {
   const { code } = useParams();
@@ -13,6 +14,7 @@ export default function ClassroomShell() {
 
   return (
     <div className="classroom-shell">
+      <ClassroomFocusGuard />
       <ClassroomProjectorButton />
       <ClassroomEndgame />
       <Classroom />

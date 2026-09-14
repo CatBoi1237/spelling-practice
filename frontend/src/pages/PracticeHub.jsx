@@ -13,6 +13,7 @@ import {
   Gauge,
   Gavel,
   ArrowRight,
+  Brain,
 } from "lucide-react";
 import { DIFFICULTY_META, MODES, PATTERN_META, WORDS } from "@/data/words";
 import { useApp } from "@/context/AppContext";
@@ -29,6 +30,7 @@ const ICONS = {
   endless: InfinityIcon,
   challenge: Zap,
   test: Timer,
+  smart: Brain,
   mistakes: Repeat,
   pattern: Shapes,
   survival: Skull,
@@ -145,20 +147,34 @@ export default function PracticeHub() {
                   key={mode.id}
                   className={cn(
                     "flex flex-col rounded-2xl border border-slate-800 bg-slate-900/40 p-5 transition-all hover:-translate-y-0.5 hover:border-amber-500/40 hover:bg-slate-900/60",
-                    disabled && "opacity-60"
+                    disabled && "opacity-60",
+                    mode.id === "smart" && "border-indigo-500/30 bg-gradient-to-br from-indigo-500/10 to-slate-900/50"
                   )}
                 >
                   <div className="flex items-start gap-4">
-                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/30">
+                    <span className={cn(
+                      "grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/30",
+                      mode.id === "smart" && "bg-indigo-500/15 text-indigo-300 ring-indigo-500/30"
+                    )}>
                       <Icon className="h-5 w-5" />
                     </span>
                     <div className="flex-1">
-                      <div className="font-heading text-lg font-semibold text-slate-100">
-                        {mode.label}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="font-heading text-lg font-semibold text-slate-100">
+                          {mode.label}
+                        </div>
+                        {mode.id === "smart" && (
+                          <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-indigo-200">Personalised</span>
+                        )}
                       </div>
                       <p className="mt-1 text-sm leading-snug text-slate-400">
                         {mode.description}
                       </p>
+                      {mode.id === "smart" && (
+                        <p className="mt-2 text-xs leading-relaxed text-indigo-200/80">
+                          Prioritises your mistakes first, then weak patterns, level-appropriate words and a few harder challenges.
+                        </p>
+                      )}
                       {mode.id === "mistakes" && (
                         <p className="mt-1 text-xs text-rose-300">
                           {missedCount
@@ -229,7 +245,12 @@ export default function PracticeHub() {
                     data-testid={`mode-${mode.id}-card`}
                     onClick={() => start(mode)}
                     disabled={disabled || (mode.id === "pattern" && patterns.length === 0)}
-                    className="mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-amber-400 disabled:pointer-events-none disabled:opacity-40"
+                    className={cn(
+                      "mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-[transform,background-color] hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-40",
+                      mode.id === "smart"
+                        ? "bg-indigo-500 text-white hover:bg-indigo-400"
+                        : "bg-amber-500 text-slate-950 hover:bg-amber-400"
+                    )}
                   >
                     Start {mode.label} <ArrowRight className="h-4 w-4" />
                   </button>

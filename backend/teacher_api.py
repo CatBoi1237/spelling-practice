@@ -615,3 +615,17 @@ def register_teacher_routes(
         )
         room = await get_classroom_or_404(code)
         return classroom_management_view(room, str(user["_id"]))
+
+    # Keep the larger teacher platform split into a dedicated module so this
+    # file stays focused on accounts, assignments and live Classroom controls.
+    from class_api import register_class_routes
+
+    register_class_routes(
+        api_router=api_router,
+        db=db,
+        get_current_user=get_current_user,
+        get_optional_user=get_optional_user,
+        public_user=public_user,
+        new_code=new_code,
+        require_teacher_account=require_teacher_account,
+    )

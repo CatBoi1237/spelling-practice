@@ -1428,6 +1428,19 @@ async def root():
     return {"message": "Spelling Bee API"}
 
 
+from teacher_api import register_teacher_routes
+
+register_teacher_routes(
+    api_router=api_router,
+    db=db,
+    get_current_user=get_current_user,
+    get_optional_user=get_optional_user,
+    public_user=public_user,
+    new_code=new_code,
+    get_classroom_or_404=get_classroom_or_404,
+    classroom_view=classroom_view,
+)
+
 app.include_router(api_router)
 
 app.add_middleware(
@@ -1447,6 +1460,10 @@ async def startup():
     await db.daily_results.create_index([("date", 1), ("score", -1), ("time_ms", 1)])
     await db.rooms.create_index("code", unique=True)
     await db.classrooms.create_index("code", unique=True)
+    await db.assignments.create_index("code", unique=True)
+    await db.assignments.create_index([("teacher_id", 1), ("created_at", -1)])
+    await db.assignment_submissions.create_index([("assignment_code", 1), ("player_id", 1), ("attempt", 1)], unique=True)
+    await db.assignment_submissions.create_index([("assignment_code", 1), ("submitted_at", -1)])
     await db.login_attempts.create_index("identifier")
     await db.password_reset_tokens.create_index("token_hash", unique=True)
     await db.password_reset_tokens.create_index("expires_at", expireAfterSeconds=0)

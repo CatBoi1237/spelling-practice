@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Sun, Moon, Monitor, Settings as SettingsIcon, BarChart3, Home as HomeIcon, CalendarDays, LogIn, LogOut,
-  Target, Trophy, Users, Library, Medal, GraduationCap, MoreHorizontal, X, ListChecks, ScanLine, School, UserRound, Bookmark,
+  Target, Trophy, Users, Library, Medal, GraduationCap, MoreHorizontal, X, ListChecks, ScanLine, School, UserRound, Bookmark, Search,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
 import { BeeMascot } from "@/components/BeeMascot";
+import GlobalSearch from "@/components/GlobalSearch";
 import { cn } from "@/lib/utils";
 
 export const NAV = [
@@ -94,8 +95,10 @@ function AccountChip({ compact }) {
 
 export default function Layout() {
   const [moreOpen, setMoreOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [online, setOnline] = useState(typeof navigator === "undefined" ? true : navigator.onLine);
   const location = useLocation();
+
   useEffect(() => {
     const on = () => setOnline(true);
     const off = () => setOnline(false);
@@ -106,15 +109,47 @@ export default function Layout() {
       window.removeEventListener("offline", off);
     };
   }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      const target = event.target;
+      const typing = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target?.isContentEditable;
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setSearchOpen(true);
+      } else if (!typing && event.key === "/") {
+        event.preventDefault();
+        setSearchOpen(true);
+      } else if (event.key === "Escape") {
+        setSearchOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   const focusMode = location.pathname === "/practice" && location.search.includes("mode=");
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
+      <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
+
       <aside
         data-testid="sidebar"
         className="honeycomb fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-slate-800 bg-slate-950/90 backdrop-blur-xl lg:flex"
       >
-        <div className="px-5 pb-4 pt-6"><Brand /></div>
+        <div className="px-5 pb-3 pt-6"><Brand /></div>
+        <div className="px-3 pb-2">
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            className="flex w-full items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2.5 text-left text-xs font-semibold text-slate-400 transition hover:border-amber-500/30 hover:text-slate-200"
+          >
+            <Search className="h-4 w-4 text-amber-400" />
+            <span className="flex-1">Search SpellBee</span>
+            <kbd className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-500">Ctrl K</kbd>
+          </button>
+        </div>
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2" aria-label="Main">
           {NAV.map(({ to, label, icon: Icon, testId }) => (
             <NavLink
@@ -153,6 +188,14 @@ export default function Layout() {
         <div className="flex items-center justify-between px-4 py-2.5">
           <Brand />
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              aria-label="Search SpellBee"
+              className="grid h-10 w-10 place-items-center rounded-xl border border-slate-800 bg-slate-900 text-slate-300 hover:border-amber-500/40 hover:text-amber-300"
+            >
+              <Search className="h-4 w-4" />
+            </button>
             <AccountChip compact />
             <ThemeButton />
           </div>

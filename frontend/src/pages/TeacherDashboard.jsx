@@ -4,6 +4,7 @@ import {
   ArrowRight,
   BarChart3,
   BookOpenCheck,
+  ClipboardList,
   GraduationCap,
   ListChecks,
   School,
@@ -63,7 +64,7 @@ export default function TeacherDashboard() {
         <GraduationCap className="mx-auto h-12 w-12 text-amber-400" />
         <h1 className="mt-5 font-heading text-4xl font-black text-slate-50">Teacher tools</h1>
         <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-slate-400">
-          Sign in to host Classroom Mode, manage spelling lists and keep your teaching tools in one place. Students can still join games as guests.
+          Sign in to host Classroom Mode, manage spelling lists, create assignments and keep your teaching tools in one place. Students can still join games and assignments as guests.
         </p>
         <Link
           to="/signin"
@@ -87,7 +88,7 @@ export default function TeacherDashboard() {
               Ready for class, {user.name}?
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">
-              Host a live spelling game, open your saved lists, or jump back into recent classroom results.
+              Host a live spelling game, create homework, open your synced lists, or jump back into recent classroom results.
             </p>
           </div>
 
@@ -101,13 +102,13 @@ export default function TeacherDashboard() {
       </header>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat icon={ListChecks} label="Saved lists" value={lists.length} hint="Custom spelling lists" />
-        <Stat icon={BarChart3} label="Recent reports" value={reports.length} hint="Saved on this device" />
+        <Stat icon={ListChecks} label="Saved lists" value={lists.length} hint="Cloud-synced teacher lists" />
+        <Stat icon={BarChart3} label="Recent reports" value={reports.length} hint="Classroom results" />
         <Stat icon={Users} label="Student joining" value="Guest" hint="No account required" />
         <Stat icon={BookOpenCheck} label="Classroom mode" value="Live" hint="Teacher-controlled audio" />
       </section>
 
-      <section className="grid gap-5 lg:grid-cols-3">
+      <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <QuickAction
           icon={School}
           title="Host Classroom"
@@ -116,9 +117,16 @@ export default function TeacherDashboard() {
           action="Create game"
         />
         <QuickAction
+          icon={ClipboardList}
+          title="Assignments"
+          body="Set independent spelling practice with a due date and attempts, then track every student's results."
+          to="/assignments"
+          action="Manage assignments"
+        />
+        <QuickAction
           icon={ListChecks}
           title="My Word Lists"
-          body="Create, edit and reuse your own spelling lists for Classroom and Race Mode."
+          body="Create, edit and reuse cloud-synced spelling lists for Classroom, Race Mode and assignments."
           to="/word-lists"
           action="Manage lists"
         />
@@ -162,7 +170,7 @@ export default function TeacherDashboard() {
           <div>
             <div className="text-[10px] font-black uppercase tracking-[0.24em] text-indigo-300">Classroom history</div>
             <h2 className="mt-1 font-heading text-2xl font-bold text-slate-50">Recent reports</h2>
-            <p className="mt-1 text-xs text-slate-500">Reports are currently stored on the teacher device that ran the class.</p>
+            <p className="mt-1 text-xs text-slate-500">Classroom reports are saved on the teacher device that ran the class.</p>
           </div>
 
           <div className="mt-5 space-y-3">

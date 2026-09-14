@@ -43,6 +43,6 @@ jobs:
       - name: Compile backend
         run: python -m compileall -q backend
       - name: Install role-test dependencies
-        run: python -m pip install fastapi==0.110.1 'pytest>=8.0.0'
+        run: python -m pip install fastapi==0.110.1 'pytest>=8.0.0' pytest-xdist
       - name: Test account roles
         run: python -m pytest -q backend/tests/test_role_switch.py

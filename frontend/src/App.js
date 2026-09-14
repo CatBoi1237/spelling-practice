@@ -17,6 +17,7 @@ import RoomShell from "@/pages/RoomShell";
 import ClassroomShell from "@/pages/ClassroomShell";
 import ClassroomProjector from "@/pages/ClassroomProjector";
 import CustomWordLists from "@/pages/CustomWordLists";
+import TeacherDashboard from "@/pages/TeacherDashboard";
 import SignIn from "@/pages/SignIn";
 import ResetPassword from "@/pages/ResetPassword";
 import Achievements from "@/pages/Achievements";
@@ -43,6 +44,7 @@ function App() {
               <Route path="/multiplayer" element={<Multiplayer />} />
               <Route path="/join" element={<Join />} />
               <Route path="/word-lists" element={<CustomWordLists />} />
+              <Route path="/teacher" element={<TeacherDashboard />} />
               <Route path="/room/:code" element={<RoomShell />} />
               <Route path="/classroom/:code" element={<ClassroomShell />} />
               <Route path="/signin" element={<SignIn />} />

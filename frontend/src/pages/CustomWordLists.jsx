@@ -2,9 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   BookOpenCheck,
+  Cloud,
+  CloudOff,
   Download,
   Edit3,
   ListPlus,
+  Loader2,
   Save,
   Trash2,
   Upload,
@@ -26,8 +29,15 @@ const EMPTY_FORM = {
   text: "",
 };
 
+function formatSyncTime(value) {
+  if (!value) return "Ready to sync";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Cloud sync on";
+  return `Synced ${date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+}
+
 export default function CustomWordLists() {
-  const { user } = useAuth();
+  const { user, syncing, lastSync, syncNow } = useAuth();
   const [lists, setLists] = useState(() => getCustomWordLists());
   const [form, setForm] = useState(EMPTY_FORM);
   const importRef = useRef(null);
@@ -49,7 +59,13 @@ export default function CustomWordLists() {
 
   const resetForm = () => setForm(EMPTY_FORM);
 
-  const save = (e) => {
+  const syncTeacherLists = async () => {
+    const ok = await syncNow();
+    if (!ok) toast("Saved on this device. Cloud sync will retry when you're online.");
+    return ok;
+  };
+
+  const save = async (e) => {
     e.preventDefault();
 
     try {
@@ -60,7 +76,8 @@ export default function CustomWordLists() {
       });
       refresh();
       resetForm();
-      toast.success(`${saved.name} saved.`);
+      const synced = await syncTeacherLists();
+      toast.success(`${saved.name} saved${synced ? " and synced" : ""}.`);
     } catch (e) {
       toast.error(e?.message || "Could not save this word list.");
     }
@@ -75,12 +92,13 @@ export default function CustomWordLists() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const remove = (list) => {
+  const remove = async (list) => {
     if (!window.confirm(`Delete “${list.name}”?`)) return;
     deleteCustomWordList(list.id);
     refresh();
     if (form.id === list.id) resetForm();
-    toast.success("Word list deleted.");
+    const synced = await syncTeacherLists();
+    toast.success(`Word list deleted${synced ? " everywhere" : " on this device"}.`);
   };
 
   const exportLists = () => {
@@ -138,7 +156,8 @@ export default function CustomWordLists() {
       if (!imported) {
         throw new Error("No valid lists were found. Lists must contain exactly 5, 10, 15, or 25 unique words.");
       }
-      toast.success(`${imported} list${imported === 1 ? "" : "s"} imported${skipped ? ` · ${skipped} skipped` : ""}.`);
+      const synced = await syncTeacherLists();
+      toast.success(`${imported} list${imported === 1 ? "" : "s"} imported${skipped ? ` · ${skipped} skipped` : ""}${synced ? " · synced" : ""}.`);
     } catch (error) {
       toast.error(error?.message || "Could not import this file.");
     }
@@ -176,8 +195,12 @@ export default function CustomWordLists() {
               Custom word lists
             </h1>
             <p className="mt-2 max-w-3xl text-slate-400">
-              Paste your own spelling words, save the list, then use it in Race or Classroom Mode. Lists are saved in this browser on this device.
+              Paste your own spelling words once and use them in Race or Classroom Mode on any device signed into your SpellBee account.
             </p>
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-200">
+              {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Cloud className="h-3.5 w-3.5" />}
+              {syncing ? "Syncing teacher lists…" : formatSyncTime(lastSync)}
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -270,10 +293,10 @@ export default function CustomWordLists() {
 
           <button
             type="submit"
-            disabled={!form.name.trim() || !validCount}
+            disabled={!form.name.trim() || !validCount || syncing}
             className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-6 py-3 font-bold text-slate-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <Save className="h-4 w-4" />
+            {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {form.id ? "Save changes" : "Save word list"}
           </button>
         </form>
@@ -283,7 +306,7 @@ export default function CustomWordLists() {
             <div>
               <h2 className="font-heading text-2xl font-bold text-slate-50">Saved lists</h2>
               <p className="mt-2 text-sm text-slate-500">
-                Pick any saved list from the Multiplayer page.
+                Synced to your account and ready for Multiplayer.
               </p>
             </div>
             <BookOpenCheck className="h-7 w-7 text-amber-400" />
@@ -291,6 +314,7 @@ export default function CustomWordLists() {
 
           {lists.length === 0 ? (
             <div className="mt-7 rounded-2xl border border-dashed border-slate-700 bg-slate-950/40 p-8 text-center text-sm text-slate-500">
+              <CloudOff className="mx-auto mb-3 h-6 w-6 text-slate-600" />
               No custom lists yet. Create your first one here.
             </div>
           ) : (

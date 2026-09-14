@@ -1,4 +1,7 @@
-const LISTS_KEY = "spellbee.customWordLists.v1";
+import { KEYS } from "@/lib/storage";
+
+const LISTS_KEY = KEYS.teacherLists;
+const LISTS_UPDATED_KEY = KEYS.teacherListsUpdatedAt;
 const GAME_PREFIX = "spellbee.customGameList.v1";
 
 export const MULTIPLAYER_WORD_COUNTS = [5, 10, 15, 25];
@@ -60,9 +63,23 @@ export function getCustomWordLists() {
     .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
 }
 
+export function getCustomWordListsUpdatedAt() {
+  if (typeof window === "undefined") return null;
+  const stored = safeJsonParse(localStorage.getItem(LISTS_UPDATED_KEY), null);
+  if (typeof stored === "string" && stored) return stored;
+  const latest = getCustomWordLists()
+    .map((item) => item.updatedAt)
+    .filter(Boolean)
+    .sort()
+    .at(-1);
+  return latest || null;
+}
+
 function writeLists(lists) {
+  const now = new Date().toISOString();
   localStorage.setItem(LISTS_KEY, JSON.stringify(lists));
-  window.dispatchEvent(new CustomEvent("spellbee:word-lists-changed"));
+  localStorage.setItem(LISTS_UPDATED_KEY, JSON.stringify(now));
+  window.dispatchEvent(new CustomEvent("spellbee:word-lists-changed", { detail: { updatedAt: now } }));
 }
 
 function makeId() {

@@ -8,6 +8,36 @@ function maxNum(a, b) {
   return Math.max(Number(a) || 0, Number(b) || 0);
 }
 
+function latestListTimestamp(data) {
+  const explicit = data?.[KEYS.teacherListsUpdatedAt];
+  if (typeof explicit === "string" && explicit) return explicit;
+  const lists = Array.isArray(data?.[KEYS.teacherLists]) ? data[KEYS.teacherLists] : [];
+  return lists
+    .map((list) => list?.updatedAt)
+    .filter(Boolean)
+    .sort()
+    .at(-1) || null;
+}
+
+function mergeTeacherLists(out, local, remote) {
+  const localTime = latestListTimestamp(local);
+  const remoteTime = latestListTimestamp(remote);
+
+  if (!localTime && !remoteTime) return;
+
+  // Word lists are treated as one versioned teacher workspace. Choosing the
+  // newest snapshot means deleting a list on one device does not resurrect it
+  // from an older device during the next sync.
+  const useLocal = Boolean(localTime && (!remoteTime || localTime >= remoteTime));
+  const source = useLocal ? local : remote;
+  const stamp = useLocal ? localTime : remoteTime;
+
+  out[KEYS.teacherLists] = Array.isArray(source?.[KEYS.teacherLists])
+    ? source[KEYS.teacherLists]
+    : [];
+  out[KEYS.teacherListsUpdatedAt] = stamp;
+}
+
 export function mergeProgress(local, remote) {
   if (!remote) return local;
   const out = { ...remote, ...local };
@@ -57,6 +87,7 @@ export function mergeProgress(local, remote) {
 
   out[KEYS.seen] = local[KEYS.seen] || remote[KEYS.seen] || [];
   out[KEYS.settings] = { ...(remote[KEYS.settings] || {}), ...(local[KEYS.settings] || {}) };
+  mergeTeacherLists(out, local, remote);
   return out;
 }
 
@@ -64,6 +95,7 @@ export function applyProgress(data) {
   Object.entries(data).forEach(([k, v]) => {
     if (Object.values(KEYS).includes(k) && k !== KEYS.theme) localStorage.setItem(k, JSON.stringify(v));
   });
+  window.dispatchEvent(new CustomEvent("spellbee:word-lists-changed"));
 }
 
 export async function pullAndMerge() {
@@ -74,19 +106,28 @@ export async function pullAndMerge() {
   return merged;
 }
 
-let pending = null;
+let pendingTimer = null;
+let pendingResolvers = [];
+
 export function push() {
-  clearTimeout(pending);
   return new Promise((resolve) => {
-    pending = setTimeout(async () => {
+    pendingResolvers.push(resolve);
+    clearTimeout(pendingTimer);
+    pendingTimer = setTimeout(async () => {
+      let ok = false;
       try {
         const updated_at = new Date().toISOString();
         await api.put("/sync", { data: exportAll(), updated_at });
         localStorage.setItem(LAST_SYNC, updated_at);
-        resolve(true);
+        ok = true;
       } catch {
-        resolve(false);
+        ok = false;
       }
+
+      const resolvers = pendingResolvers;
+      pendingResolvers = [];
+      pendingTimer = null;
+      resolvers.forEach((done) => done(ok));
     }, 400);
   });
 }

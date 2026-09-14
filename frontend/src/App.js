@@ -9,6 +9,7 @@ import Dashboard from "@/pages/Dashboard";
 import Practice from "@/pages/Practice";
 import Results from "@/pages/ResultsV2";
 import Progress from "@/pages/Progress";
+import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
 import Daily from "@/pages/Daily";
 import Multiplayer from "@/pages/Multiplayer";
@@ -39,6 +40,7 @@ function App() {
               <Route path="/practice" element={<Practice />} />
               <Route path="/results" element={<Results />} />
               <Route path="/progress" element={<Progress />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/daily" element={<Daily />} />
               <Route path="/multiplayer" element={<Multiplayer />} />

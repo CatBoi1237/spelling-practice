@@ -10,6 +10,8 @@ export const KEYS = {
   seen: "sb.seen.v1",
   achievements: "sb.achievements.v1",
   daily: "sb.daily.v1",
+  teacherLists: "spellbee.customWordLists.v1",
+  teacherListsUpdatedAt: "spellbee.customWordLists.updatedAt.v1",
 };
 
 export const DEFAULT_SETTINGS = {
@@ -196,7 +198,11 @@ export function exportAll() {
 
 export function resetAll() {
   Object.values(KEYS).forEach((k) => {
-    if (k !== KEYS.theme) localStorage.removeItem(k);
+    // Teacher content belongs to the signed-in account and should not disappear
+    // when a learner resets local practice progress.
+    if (k !== KEYS.theme && k !== KEYS.teacherLists && k !== KEYS.teacherListsUpdatedAt) {
+      localStorage.removeItem(k);
+    }
   });
 }
 

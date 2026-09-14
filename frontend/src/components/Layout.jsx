@@ -10,25 +10,56 @@ import { BeeMascot } from "@/components/BeeMascot";
 import GlobalSearch from "@/components/GlobalSearch";
 import { cn } from "@/lib/utils";
 
-export const NAV = [
-  { to: "/", label: "Home", icon: HomeIcon, testId: "nav-home" },
-  { to: "/practice", label: "Practice", icon: Target, testId: "nav-practice" },
-  { to: "/daily", label: "Daily Challenge", short: "Daily", icon: CalendarDays, testId: "nav-daily" },
-  { to: "/leaderboards", label: "Leaderboards", icon: Trophy, testId: "nav-leaderboards" },
-  { to: "/multiplayer", label: "Multiplayer", icon: Users, testId: "nav-multiplayer" },
-  { to: "/join", label: "Join Game", short: "Join", icon: ScanLine, testId: "nav-join" },
-  { to: "/teacher", label: "Teacher Dashboard", short: "Teacher", icon: School, testId: "nav-teacher" },
-  { to: "/word-lists", label: "My Word Lists", short: "Word Lists", icon: ListChecks, testId: "nav-word-lists" },
-  { to: "/saved-words", label: "Saved Words", short: "Saved", icon: Bookmark, testId: "nav-saved-words" },
-  { to: "/library", label: "Word Library", icon: Library, testId: "nav-library" },
-  { to: "/learn", label: "Learn", icon: GraduationCap, testId: "nav-learn" },
-  { to: "/progress", label: "Progress", icon: BarChart3, testId: "nav-progress" },
-  { to: "/profile", label: "Profile", icon: UserRound, testId: "nav-profile" },
-  { to: "/achievements", label: "Achievements", icon: Medal, testId: "nav-achievements" },
-  { to: "/settings", label: "Settings", icon: SettingsIcon, testId: "nav-settings" },
+const HOME_NAV = { to: "/", label: "Home", icon: HomeIcon, testId: "nav-home" };
+
+export const NAV_GROUPS = [
+  {
+    id: "learn",
+    label: "Learn & practise",
+    items: [
+      { to: "/practice", label: "Practice", icon: Target, testId: "nav-practice" },
+      { to: "/daily", label: "Daily Challenge", short: "Daily", icon: CalendarDays, testId: "nav-daily" },
+      { to: "/learn", label: "Lessons", icon: GraduationCap, testId: "nav-learn" },
+      { to: "/library", label: "Word Library", icon: Library, testId: "nav-library" },
+      { to: "/saved-words", label: "Saved Words", short: "Saved", icon: Bookmark, testId: "nav-saved-words" },
+    ],
+  },
+  {
+    id: "compete",
+    label: "Play & compete",
+    items: [
+      { to: "/multiplayer", label: "Multiplayer", icon: Users, testId: "nav-multiplayer" },
+      { to: "/join", label: "Join Game", short: "Join", icon: ScanLine, testId: "nav-join" },
+      { to: "/leaderboards", label: "Leaderboards", icon: Trophy, testId: "nav-leaderboards" },
+    ],
+  },
+  {
+    id: "teacher",
+    label: "Teacher",
+    items: [
+      { to: "/teacher", label: "Teacher Dashboard", short: "Teacher", icon: School, testId: "nav-teacher" },
+      { to: "/word-lists", label: "Word Lists", short: "Word Lists", icon: ListChecks, testId: "nav-word-lists" },
+    ],
+  },
+  {
+    id: "me",
+    label: "My SpellBee",
+    items: [
+      { to: "/progress", label: "Progress", icon: BarChart3, testId: "nav-progress" },
+      { to: "/profile", label: "Profile", icon: UserRound, testId: "nav-profile" },
+      { to: "/achievements", label: "Achievements", icon: Medal, testId: "nav-achievements" },
+      { to: "/settings", label: "Settings", icon: SettingsIcon, testId: "nav-settings" },
+    ],
+  },
 ];
 
-const MOBILE_PRIMARY = ["/", "/practice", "/daily", "/progress"];
+export const NAV = [HOME_NAV, ...NAV_GROUPS.flatMap((group) => group.items)];
+
+const MOBILE_PRIMARY = ["/", "/practice", "/multiplayer", "/progress"];
+const MORE_GROUPS = NAV_GROUPS.map((group) => ({
+  ...group,
+  items: group.items.filter((item) => !MOBILE_PRIMARY.includes(item.to)),
+})).filter((group) => group.items.length);
 
 const THEME_CYCLE = { dark: "light", light: "system", system: "dark" };
 const ThemeIcon = { dark: Moon, light: Sun, system: Monitor };
@@ -93,6 +124,41 @@ function AccountChip({ compact }) {
   );
 }
 
+function NavItem({ item, onClick, compact = false }) {
+  const { to, label, short, icon: Icon, testId } = item;
+  return (
+    <NavLink
+      to={to}
+      data-testid={compact ? `${testId}-more` : testId}
+      end={to === "/"}
+      onClick={onClick}
+      className={({ isActive }) => cn(
+        compact
+          ? "relative flex min-h-[58px] items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-xs font-semibold transition-colors"
+          : "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors",
+        isActive
+          ? compact
+            ? "border-amber-500/30 bg-amber-500/15 text-amber-300"
+            : "bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/30"
+          : compact
+            ? "border-slate-800 bg-slate-950/50 text-slate-300 hover:border-slate-700 hover:bg-slate-800/60"
+            : "text-slate-400 hover:bg-slate-900 hover:text-slate-100"
+      )}
+    >
+      <span className={cn("grid shrink-0 place-items-center", compact && "h-8 w-8 rounded-lg bg-slate-900")}> 
+        <Icon className={compact ? "h-4 w-4" : "h-4 w-4 shrink-0"} />
+      </span>
+      <span className="min-w-0 truncate">{short || label}</span>
+      {!compact && to === "/join" && (
+        <span className="ml-auto rounded-full border border-indigo-500/20 bg-indigo-500/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-indigo-300">Code</span>
+      )}
+      {!compact && to === "/teacher" && (
+        <span className="ml-auto rounded-full border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-emerald-300">Teach</span>
+      )}
+    </NavLink>
+  );
+}
+
 export default function Layout() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -122,13 +188,19 @@ export default function Layout() {
         setSearchOpen(true);
       } else if (event.key === "Escape") {
         setSearchOpen(false);
+        setMoreOpen(false);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [location.pathname]);
+
   const focusMode = location.pathname === "/practice" && location.search.includes("mode=");
+  const mobilePrimaryItems = NAV.filter((item) => MOBILE_PRIMARY.includes(item.to));
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -150,32 +222,23 @@ export default function Layout() {
             <kbd className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-500">Ctrl K</kbd>
           </button>
         </div>
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2" aria-label="Main">
-          {NAV.map(({ to, label, icon: Icon, testId }) => (
-            <NavLink
-              key={to}
-              to={to}
-              data-testid={testId}
-              end={to === "/"}
-              className={({ isActive }) => cn(
-                "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors",
-                isActive ? "bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/30" : "text-slate-400 hover:bg-slate-900 hover:text-slate-100"
-              )}
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              {label}
-              {to === "/join" && (
-                <span className="ml-auto rounded-full border border-indigo-500/20 bg-indigo-500/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-indigo-300">Code</span>
-              )}
-              {to === "/teacher" && (
-                <span className="ml-auto rounded-full border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-emerald-300">Teach</span>
-              )}
-              {to === "/word-lists" && (
-                <span className="ml-auto rounded-full border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-amber-300">New</span>
-              )}
-            </NavLink>
+
+        <nav className="flex-1 overflow-y-auto px-3 pb-4" aria-label="Main">
+          <div className="space-y-1 py-1">
+            <NavItem item={HOME_NAV} />
+          </div>
+          {NAV_GROUPS.map((group) => (
+            <div key={group.id} className="mt-4">
+              <div className="px-3 pb-1.5 text-[9px] font-black uppercase tracking-[0.24em] text-slate-600">
+                {group.label}
+              </div>
+              <div className="space-y-1">
+                {group.items.map((item) => <NavItem key={item.to} item={item} />)}
+              </div>
+            </div>
           ))}
         </nav>
+
         <div className="space-y-2 border-t border-slate-800 p-3">
           <div className="flex items-center gap-2">
             <div className="min-w-0 flex-1"><AccountChip /></div>
@@ -220,7 +283,7 @@ export default function Layout() {
           aria-label="Mobile"
         >
           <div className="flex items-stretch justify-around">
-            {NAV.filter((nav) => MOBILE_PRIMARY.includes(nav.to)).map(({ to, label, short, icon: Icon, testId }) => (
+            {mobilePrimaryItems.map(({ to, label, short, icon: Icon, testId }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -247,26 +310,41 @@ export default function Layout() {
 
       {moreOpen && (
         <div className="fixed inset-0 z-30 lg:hidden" onClick={() => setMoreOpen(false)}>
-          <div className="absolute inset-0 bg-slate-950/60" />
-          <div data-testid="mobile-more-sheet" className="absolute inset-x-3 bottom-20 grid grid-cols-3 gap-2 rounded-2xl border border-slate-800 bg-slate-900 p-3 shadow-2xl" onClick={(event) => event.stopPropagation()}>
-            {NAV.filter((nav) => !MOBILE_PRIMARY.includes(nav.to)).map(({ to, label, short, icon: Icon, testId }) => (
-              <NavLink
-                key={to}
-                to={to}
-                data-testid={`${testId}-more`}
+          <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" />
+          <div
+            data-testid="mobile-more-sheet"
+            className="absolute inset-x-3 bottom-20 max-h-[72vh] overflow-y-auto rounded-3xl border border-slate-800 bg-slate-900 p-4 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <div className="font-heading text-lg font-black text-slate-100">More SpellBee</div>
+                <div className="text-[11px] text-slate-500">Everything grouped by what you want to do.</div>
+              </div>
+              <button
+                type="button"
                 onClick={() => setMoreOpen(false)}
-                className={({ isActive }) => cn(
-                  "relative flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 text-center text-[11px] font-semibold",
-                  isActive ? "bg-amber-500/15 text-amber-300" : "text-slate-300 hover:bg-slate-800"
-                )}
+                className="grid h-9 w-9 place-items-center rounded-xl border border-slate-800 text-slate-400"
+                aria-label="Close menu"
               >
-                <Icon className="h-5 w-5" />
-                {short || label}
-                {to === "/join" && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-indigo-400" />}
-                {to === "/teacher" && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-emerald-400" />}
-                {to === "/word-lists" && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-amber-400" />}
-              </NavLink>
-            ))}
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-5">
+              {MORE_GROUPS.map((group) => (
+                <section key={group.id}>
+                  <div className="mb-2 px-1 text-[9px] font-black uppercase tracking-[0.24em] text-slate-500">
+                    {group.label}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {group.items.map((item) => (
+                      <NavItem key={item.to} item={item} compact onClick={() => setMoreOpen(false)} />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
           </div>
         </div>
       )}

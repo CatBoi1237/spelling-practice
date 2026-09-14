@@ -58,10 +58,6 @@ export const NAV_GROUPS = [
 export const NAV = [HOME_NAV, ...NAV_GROUPS.flatMap((group) => group.items)];
 
 const MOBILE_PRIMARY = ["/", "/practice", "/multiplayer", "/progress"];
-const MORE_GROUPS = NAV_GROUPS.map((group) => ({
-  ...group,
-  items: group.items.filter((item) => !MOBILE_PRIMARY.includes(item.to)),
-})).filter((group) => group.items.length);
 
 const THEME_CYCLE = { dark: "light", light: "system", system: "dark" };
 const ThemeIcon = { dark: Moon, light: Sun, system: Monitor };
@@ -106,10 +102,17 @@ function AccountChip({ compact }) {
           navigate("/");
         }}
         className={cn("flex w-full items-center gap-2 whitespace-nowrap rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-300", compact && "w-auto px-2.5")}
-        title="Sign out"
+        title={`Signed in as ${user.account_type === "teacher" ? "Teacher" : "Student"} · click to sign out`}
       >
         <span className="grid h-6 w-6 place-items-center rounded-full bg-amber-500 text-[11px] font-black text-slate-950">{user.name.charAt(0).toUpperCase()}</span>
-        {!compact && <span className="truncate">{user.name}</span>}
+        {!compact && (
+          <span className="min-w-0 flex-1 truncate text-left">
+            {user.name}
+            <span className="ml-1 text-[9px] font-black uppercase tracking-wider text-slate-600">
+              · {user.account_type === "teacher" ? "Teacher" : "Student"}
+            </span>
+          </span>
+        )}
         <LogOut className="h-3.5 w-3.5 text-slate-500" />
       </button>
     );
@@ -166,6 +169,7 @@ export default function Layout() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [online, setOnline] = useState(typeof navigator === "undefined" ? true : navigator.onLine);
   const location = useLocation();
+  const { user } = useAuth();
 
   useEffect(() => {
     const on = () => setOnline(true);
@@ -201,6 +205,14 @@ export default function Layout() {
     setMoreOpen(false);
   }, [location.pathname]);
 
+  const isTeacher = user?.account_type === "teacher";
+  const visibleGroups = NAV_GROUPS.filter((group) => group.id !== "teacher" || isTeacher);
+  const moreGroups = visibleGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !MOBILE_PRIMARY.includes(item.to)),
+    }))
+    .filter((group) => group.items.length);
   const focusMode = location.pathname === "/practice" && location.search.includes("mode=");
   const mobilePrimaryItems = NAV.filter((item) => MOBILE_PRIMARY.includes(item.to));
 
@@ -229,7 +241,7 @@ export default function Layout() {
           <div className="space-y-1 py-1">
             <NavItem item={HOME_NAV} />
           </div>
-          {NAV_GROUPS.map((group) => (
+          {visibleGroups.map((group) => (
             <div key={group.id} className="mt-4">
               <div className="px-3 pb-1.5 text-[9px] font-black uppercase tracking-[0.24em] text-slate-600">
                 {group.label}
@@ -312,7 +324,7 @@ export default function Layout() {
 
       <MobileMoreMenu
         open={moreOpen}
-        groups={MORE_GROUPS}
+        groups={moreGroups}
         onClose={() => setMoreOpen(false)}
       />
     </div>

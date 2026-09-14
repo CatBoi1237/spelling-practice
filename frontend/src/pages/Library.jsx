@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Play, Search, Volume2 } from "lucide-react";
+import { Bookmark, BookOpen, Play, Search, Volume2 } from "lucide-react";
 import { WORDS, DIFFICULTY_META, CATEGORIES, PATTERN_META } from "@/data/words";
 import { useApp } from "@/context/AppContext";
 import { getWordStats, isMastered } from "@/lib/storage";
+import { getSavedWords, toggleSavedWord } from "@/lib/savedWords";
 import { speak } from "@/lib/speech";
 import { Eyebrow } from "@/components/ui-bits";
 import { cn } from "@/lib/utils";
@@ -28,7 +29,12 @@ export default function Library() {
   const [cat, setCat] = useState("all");
   const [pattern, setPattern] = useState("all");
   const [limit, setLimit] = useState(PAGE);
+  const [savedWords, setSavedWords] = useState(() => getSavedWords());
   const wordStats = useMemo(() => getWordStats(), []);
+  const savedSet = useMemo(
+    () => new Set(savedWords.map((word) => word.toLocaleLowerCase())),
+    [savedWords]
+  );
 
   const patterns = useMemo(() => {
     const set = new Set();
@@ -68,6 +74,10 @@ export default function Library() {
     setLimit(PAGE);
   };
 
+  const toggleSaved = (word) => {
+    setSavedWords(toggleSavedWord(word));
+  };
+
   return (
     <div className="space-y-8">
       <header className="relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900/80 via-slate-950 to-cyan-950/20 p-6 sm:p-8">
@@ -80,12 +90,16 @@ export default function Library() {
                 {WORDS.length.toLocaleString()} words to explore.
               </h1>
               <p className="mt-2 max-w-2xl text-base text-slate-400">
-                Browse from Grade 4 foundations through national-bee vocabulary, then practise any word instantly.
+                Browse from Grade 4 foundations through national-bee vocabulary, save favourites, then practise any word instantly.
               </p>
             </div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-4 py-2 text-xs font-semibold text-cyan-200">
-              <BookOpen className="h-4 w-4" /> Grade 4 → Extreme
-            </span>
+            <button
+              type="button"
+              onClick={() => navigate("/saved-words")}
+              className="inline-flex items-center gap-2 rounded-full border border-amber-500/25 bg-amber-500/10 px-4 py-2 text-xs font-semibold text-amber-200 hover:bg-amber-500/15"
+            >
+              <Bookmark className="h-4 w-4" /> {savedWords.length} saved
+            </button>
           </div>
         </div>
       </header>
@@ -162,6 +176,7 @@ export default function Library() {
             const accuracy = stats?.attempts
               ? Math.round((stats.correct / stats.attempts) * 100)
               : null;
+            const isSaved = savedSet.has(word.word.toLocaleLowerCase());
 
             return (
               <article
@@ -170,16 +185,33 @@ export default function Library() {
                 className="group flex flex-col rounded-2xl border border-slate-800 bg-slate-900/40 p-5 transition-all hover:-translate-y-0.5 hover:border-slate-700 hover:bg-slate-900/60"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-mono text-xl font-semibold tracking-wider text-slate-100 group-hover:text-amber-200">{word.word}</h3>
-                  <span className={cn(
-                    "rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest",
-                    DIFF_STYLE[word.difficulty] || "border-slate-700 text-slate-300"
-                  )}>
-                    {DIFFICULTY_META[word.difficulty]?.label || word.difficulty}
-                  </span>
-                </div>
-                <div className="mt-1 text-xs text-slate-500">
-                  {word.partOfSpeech}{word.category ? ` · ${word.category}` : ""}{word.syllableBreak ? ` · ${word.syllableBreak}` : ""}
+                  <div className="min-w-0">
+                    <h3 className="font-mono text-xl font-semibold tracking-wider text-slate-100 group-hover:text-amber-200">{word.word}</h3>
+                    <div className="mt-1 text-xs text-slate-500">
+                      {word.partOfSpeech}{word.category ? ` · ${word.category}` : ""}{word.syllableBreak ? ` · ${word.syllableBreak}` : ""}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      aria-label={isSaved ? `Remove ${word.word} from saved words` : `Save ${word.word}`}
+                      onClick={() => toggleSaved(word.word)}
+                      className={cn(
+                        "grid h-8 w-8 place-items-center rounded-full border transition",
+                        isSaved
+                          ? "border-amber-500/40 bg-amber-500/15 text-amber-300"
+                          : "border-slate-700 text-slate-500 hover:border-amber-500/40 hover:text-amber-300"
+                      )}
+                    >
+                      <Bookmark className={cn("h-4 w-4", isSaved && "fill-current")} />
+                    </button>
+                    <span className={cn(
+                      "rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest",
+                      DIFF_STYLE[word.difficulty] || "border-slate-700 text-slate-300"
+                    )}>
+                      {DIFFICULTY_META[word.difficulty]?.label || word.difficulty}
+                    </span>
+                  </div>
                 </div>
                 <p className="mt-3 text-sm text-slate-300">{word.definition}</p>
                 {word.example && <p className="mt-1 text-sm italic text-slate-400">“{word.example}”</p>}

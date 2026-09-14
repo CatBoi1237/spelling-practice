@@ -9,6 +9,7 @@ import Dashboard from "@/pages/Dashboard";
 import Practice from "@/pages/Practice";
 import Results from "@/pages/ResultsV2";
 import Progress from "@/pages/Progress";
+import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
 import Daily from "@/pages/Daily";
 import Multiplayer from "@/pages/Multiplayer";
@@ -17,6 +18,8 @@ import RoomShell from "@/pages/RoomShell";
 import ClassroomShell from "@/pages/ClassroomShell";
 import ClassroomProjector from "@/pages/ClassroomProjector";
 import CustomWordLists from "@/pages/CustomWordLists";
+import SavedWords from "@/pages/SavedWords";
+import TeacherDashboard from "@/pages/TeacherDashboard";
 import SignIn from "@/pages/SignIn";
 import ResetPassword from "@/pages/ResetPassword";
 import Achievements from "@/pages/Achievements";
@@ -38,11 +41,14 @@ function App() {
               <Route path="/practice" element={<Practice />} />
               <Route path="/results" element={<Results />} />
               <Route path="/progress" element={<Progress />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/daily" element={<Daily />} />
               <Route path="/multiplayer" element={<Multiplayer />} />
               <Route path="/join" element={<Join />} />
               <Route path="/word-lists" element={<CustomWordLists />} />
+              <Route path="/saved-words" element={<SavedWords />} />
+              <Route path="/teacher" element={<TeacherDashboard />} />
               <Route path="/room/:code" element={<RoomShell />} />
               <Route path="/classroom/:code" element={<ClassroomShell />} />
               <Route path="/signin" element={<SignIn />} />

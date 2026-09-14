@@ -138,6 +138,10 @@ def register_teacher_routes(
                 detail="A teacher account is required for this feature",
             )
 
+    async def require_student_account(user: dict) -> None:
+        if await resolve_account_type(user) != "student":
+            raise HTTPException(status_code=403, detail="A student account is required for this feature")
+
     async def assignment_or_404(code: str):
         assignment = await db.assignments.find_one({"code": code.upper()})
         if not assignment:
@@ -185,18 +189,17 @@ def register_teacher_routes(
             raise HTTPException(status_code=400, detail="Account type must be student or teacher")
 
         current = await resolve_account_type(user)
-        if current == "teacher" and target == "student":
-            raise HTTPException(
-                status_code=400,
-                detail="Teacher accounts cannot be downgraded from the app",
-            )
-
         if current != target:
-            await db.users.update_one(
-                {"_id": user["_id"]},
+            changed = await db.users.update_one(
+                {"_id": user["_id"], "account_type": current},
                 {"$set": {"account_type": target}},
             )
-            user["account_type"] = target
+            if changed.modified_count != 1:
+                raise HTTPException(status_code=409, detail="Account type changed on another device. Refresh and try again.")
+            # Never alter the user's id or the collections keyed by that id.
+            # Existing class memberships, submissions and teacher-owned work
+            # become available again as soon as the corresponding role returns.
+            user = await db.users.find_one({"_id": user["_id"]})
 
         return {"user": await account_public(user)}
 
@@ -229,6 +232,46 @@ def register_teacher_routes(
         guarded_teacher_call._spellbee_teacher_guard = True
         route.dependant.call = guarded_teacher_call
         route.endpoint = guarded_teacher_call
+
+    # Guests may join, but a signed-in Teacher cannot act as a Student in a
+    # live Classroom. The membership stays in the room for a later switch back.
+    student_classroom_paths = {
+        "/classrooms/{code}/join",
+        "/classrooms/{code}/ready",
+        "/classrooms/{code}/submit",
+    }
+    for route in api_router.routes:
+        route_path = getattr(route, "path", "")
+        if not any(route_path.endswith(path) for path in student_classroom_paths):
+            continue
+        if "POST" not in (getattr(route, "methods", set()) or set()) or not hasattr(route, "dependant"):
+            continue
+        original_call = route.dependant.call
+
+        async def guarded_student_call(*args, __original=original_call, **kwargs):
+            user = kwargs.get("user")
+            if user:
+                await require_student_account(user)
+            return await __original(*args, **kwargs)
+
+        route.dependant.call = guarded_student_call
+        route.endpoint = guarded_student_call
+
+    for route in api_router.routes:
+        if not getattr(route, "path", "").endswith("/classrooms/{code}") or "GET" not in (getattr(route, "methods", set()) or set()):
+            continue
+        original_call = route.dependant.call
+
+        async def guarded_classroom_view(*args, __original=original_call, **kwargs):
+            user = kwargs.get("user")
+            if user and await resolve_account_type(user) != "teacher":
+                room = await get_classroom_or_404(kwargs["code"])
+                if room["host_id"] == str(user["_id"]):
+                    raise HTTPException(status_code=403, detail="Switch to Teacher to manage this classroom")
+            return await __original(*args, **kwargs)
+
+        route.dependant.call = guarded_classroom_view
+        route.endpoint = guarded_classroom_view
 
     # ---------------- teacher assignments ----------------
     @api_router.post("/assignments")
@@ -288,6 +331,8 @@ def register_teacher_routes(
         player_id: Optional[str] = None,
         user: Optional[dict] = Depends(get_optional_user),
     ):
+        if user:
+            await require_student_account(user)
         assignment = await assignment_or_404(code)
         pid = str(user["_id"]) if user else player_id
         out = _assignment_public(assignment, include_words=True)
@@ -312,6 +357,8 @@ def register_teacher_routes(
         body: AssignmentSubmitBody,
         user: Optional[dict] = Depends(get_optional_user),
     ):
+        if user:
+            await require_student_account(user)
         assignment = await assignment_or_404(code)
         if assignment.get("status", "active") != "active":
             raise HTTPException(status_code=400, detail="This assignment is closed")
@@ -628,4 +675,5 @@ def register_teacher_routes(
         public_user=public_user,
         new_code=new_code,
         require_teacher_account=require_teacher_account,
+        require_student_account=require_student_account,
     )

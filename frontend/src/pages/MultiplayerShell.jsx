@@ -26,7 +26,7 @@ function makeSchoolList(seed, count, level) {
 
 function SchoolGameLauncher() {
   const navigate = useNavigate();
-  const { user, playerName } = useAuth();
+  const { user, isTeacher, playerName } = useAuth();
   const playerId = user?.id || getPlayerId();
   const [level, setLevel] = useState("grade6");
   const [count, setCount] = useState(10);
@@ -52,6 +52,7 @@ function SchoolGameLauncher() {
   };
 
   const createClassroom = async () => {
+    if (!isTeacher) return;
     if (!user) {
       toast.error("Teachers need to sign in before hosting Classroom Mode.");
       navigate("/signin");
@@ -146,7 +147,7 @@ function SchoolGameLauncher() {
           <Swords className="h-4 w-4" />
           {busy === "race" ? "Creating…" : `Host ${DIFFICULTY_META[level]?.label} Race`}
         </button>
-        <button
+        {isTeacher && <button
           type="button"
           onClick={createClassroom}
           disabled={Boolean(busy)}
@@ -154,7 +155,7 @@ function SchoolGameLauncher() {
         >
           {user ? <School className="h-4 w-4" /> : <Users className="h-4 w-4" />}
           {busy === "classroom" ? "Creating…" : `Host ${DIFFICULTY_META[level]?.label} Classroom`}
-        </button>
+        </button>}
       </div>
     </section>
   );

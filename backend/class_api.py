@@ -88,6 +88,7 @@ def register_class_routes(
     public_user,
     new_code,
     require_teacher_account,
+    require_student_account,
 ):
     async def class_or_404(code: str):
         doc = await db.school_classes.find_one({"code": code.upper()})
@@ -397,6 +398,8 @@ def register_class_routes(
         player_id: Optional[str] = None,
         user: Optional[dict] = Depends(get_optional_user),
     ):
+        if user:
+            await require_student_account(user)
         doc = await class_or_404(code)
         pid = str(user["_id"]) if user else player_id
         return await public_class_view(doc, pid)
@@ -407,6 +410,8 @@ def register_class_routes(
         body: ClassJoinBody,
         user: Optional[dict] = Depends(get_optional_user),
     ):
+        if user:
+            await require_student_account(user)
         doc = await class_or_404(code)
         if doc.get("archived"):
             raise HTTPException(status_code=400, detail="This class is archived")
@@ -449,6 +454,7 @@ def register_class_routes(
 
     @api_router.get("/my/classes")
     async def my_classes(user: dict = Depends(get_current_user)):
+        await require_student_account(user)
         pid = str(user["_id"])
         rows = await db.school_classes.find(
             {"students.player_id": pid, "archived": {"$ne": True}},

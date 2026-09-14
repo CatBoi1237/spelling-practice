@@ -7,24 +7,9 @@ import { useApp } from "@/context/AppContext";
 
 const AuthContext = createContext(null);
 
-async function loadAccount(fallbackUser = null) {
-  try {
-    const { data } = await api.get("/auth/account");
-    return data.user;
-  } catch {
-    if (fallbackUser) {
-      return {
-        ...fallbackUser,
-        account_type: fallbackUser.account_type || "student",
-      };
-    }
-
-    const { data } = await api.get("/auth/me");
-    return {
-      ...data.user,
-      account_type: data.user.account_type || "student",
-    };
-  }
+async function loadAccount() {
+  const { data } = await api.get("/auth/account");
+  return data.user;
 }
 
 export function AuthProvider({ children }) {
@@ -74,7 +59,7 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (email, password) => {
     const { data } = await api.post("/auth/login", { email, password });
     setToken(data.token);
-    const account = await loadAccount(data.user);
+    const account = await loadAccount();
     setUser(account);
     return account;
   }, []);
@@ -83,38 +68,33 @@ export function AuthProvider({ children }) {
     const { data } = await api.post("/auth/register", { email, password, name });
     setToken(data.token);
 
-    let account = {
-      ...data.user,
-      account_type: "student",
-    };
-
-    try {
-      const { data: roleData } = await api.post("/auth/account/type", {
-        account_type: accountType === "teacher" ? "teacher" : "student",
-      });
-      account = roleData.user;
-    } catch {
-      account = {
-        ...account,
-        account_type: accountType === "teacher" ? "teacher" : "student",
-      };
-    }
+    const { data: roleData } = await api.post("/auth/account/type", {
+      account_type: accountType === "teacher" ? "teacher" : "student",
+    });
+    const account = roleData.user;
 
     setUser(account);
     return account;
   }, []);
 
-  const upgradeToTeacher = useCallback(async () => {
+  const switchAccountType = useCallback(async (accountType) => {
+    await pullAndMerge();
+    const synced = await push();
+    if (!synced) throw new Error("Sync your progress before switching account type.");
+    updateStats(getStats());
+    updateSettings(getSettings());
+    refresh();
+    setLastSync(lastSyncedAt());
     const { data } = await api.post("/auth/account/type", {
-      account_type: "teacher",
+      account_type: accountType,
     });
     setUser(data.user);
     return data.user;
-  }, []);
+  }, [updateStats, updateSettings, refresh]);
 
   const refreshAccount = useCallback(async () => {
     if (!user) return null;
-    const account = await loadAccount(user);
+    const account = await loadAccount();
     setUser(account);
     return account;
   }, [user]);
@@ -154,7 +134,7 @@ export function AuthProvider({ children }) {
       syncNow,
       login,
       register,
-      upgradeToTeacher,
+      switchAccountType,
       refreshAccount,
       logout,
       isTeacher: user?.account_type === "teacher",
@@ -170,7 +150,7 @@ export function AuthProvider({ children }) {
       syncNow,
       login,
       register,
-      upgradeToTeacher,
+      switchAccountType,
       refreshAccount,
       logout,
       guestName,

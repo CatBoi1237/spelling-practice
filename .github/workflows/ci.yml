@@ -41,4 +41,8 @@ jobs:
         with:
           python-version: '3.11'
       - name: Compile backend
-        run: python -m py_compile backend/server.py
+        run: python -m compileall -q backend
+      - name: Install role-test dependencies
+        run: python -m pip install fastapi==0.110.1 'pytest>=8.0.0'
+      - name: Test account roles
+        run: python -m pytest -q backend/tests/test_role_switch.py

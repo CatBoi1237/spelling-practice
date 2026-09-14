@@ -14,6 +14,10 @@ class AddTimeBody(BaseModel):
     seconds: int = Field(default=10, ge=1, le=60)
 
 
+class AccountTypeBody(BaseModel):
+    account_type: str
+
+
 class AssignmentCreateBody(BaseModel):
     title: str = Field(min_length=1, max_length=80)
     words: List[str]
@@ -95,6 +99,45 @@ def register_teacher_routes(
     get_classroom_or_404,
     classroom_view,
 ):
+    async def resolve_account_type(user: dict) -> str:
+        """
+        Existing SpellBee accounts pre-date account roles. Preserve people who
+        already used teacher features by promoting accounts that own an
+        assignment or Classroom; all other legacy accounts become students.
+        """
+        role = user.get("account_type")
+        if role in ("student", "teacher"):
+            return role
+
+        user_id = str(user["_id"])
+        owns_assignment = await db.assignments.find_one(
+            {"teacher_id": user_id},
+            {"_id": 1},
+        )
+        owns_classroom = await db.classrooms.find_one(
+            {"host_id": user_id},
+            {"_id": 1},
+        )
+        role = "teacher" if owns_assignment or owns_classroom else "student"
+        await db.users.update_one(
+            {"_id": user["_id"]},
+            {"$set": {"account_type": role}},
+        )
+        user["account_type"] = role
+        return role
+
+    async def account_public(user: dict) -> dict:
+        data = public_user(user)
+        data["account_type"] = await resolve_account_type(user)
+        return data
+
+    async def require_teacher_account(user: dict) -> None:
+        if await resolve_account_type(user) != "teacher":
+            raise HTTPException(
+                status_code=403,
+                detail="A teacher account is required for this feature",
+            )
+
     async def assignment_or_404(code: str):
         assignment = await db.assignments.find_one({"code": code.upper()})
         if not assignment:
@@ -102,12 +145,14 @@ def register_teacher_routes(
         return assignment
 
     async def require_assignment_teacher(code: str, user: dict):
+        await require_teacher_account(user)
         assignment = await assignment_or_404(code)
         if assignment["teacher_id"] != str(user["_id"]):
             raise HTTPException(status_code=403, detail="Only the teacher can manage this assignment")
         return assignment
 
     async def require_classroom_teacher(code: str, user: dict):
+        await require_teacher_account(user)
         room = await get_classroom_or_404(code)
         if room["host_id"] != str(user["_id"]):
             raise HTTPException(status_code=403, detail="Only the teacher can manage this classroom")
@@ -125,12 +170,73 @@ def register_teacher_routes(
         })
         return view
 
+    # ---------------- account roles ----------------
+    @api_router.get("/auth/account")
+    async def get_account(user: dict = Depends(get_current_user)):
+        return {"user": await account_public(user)}
+
+    @api_router.post("/auth/account/type")
+    async def set_account_type(
+        body: AccountTypeBody,
+        user: dict = Depends(get_current_user),
+    ):
+        target = (body.account_type or "").strip().lower()
+        if target not in ("student", "teacher"):
+            raise HTTPException(status_code=400, detail="Account type must be student or teacher")
+
+        current = await resolve_account_type(user)
+        if current == "teacher" and target == "student":
+            raise HTTPException(
+                status_code=400,
+                detail="Teacher accounts cannot be downgraded from the app",
+            )
+
+        if current != target:
+            await db.users.update_one(
+                {"_id": user["_id"]},
+                {"$set": {"account_type": target}},
+            )
+            user["account_type"] = target
+
+        return {"user": await account_public(user)}
+
+    # Protect the teacher-controlled Classroom endpoints that live in server.py
+    # without changing the public student join/read endpoints.
+    protected_classroom_paths = {
+        "/classrooms",
+        "/classrooms/{code}/round/start",
+        "/classrooms/{code}/reveal",
+        "/classrooms/{code}/finish",
+    }
+    for route in api_router.routes:
+        route_path = getattr(route, "path", "")
+        methods = getattr(route, "methods", set()) or set()
+        matched = any(route_path.endswith(path) for path in protected_classroom_paths)
+        if not matched or "POST" not in methods or not hasattr(route, "dependant"):
+            continue
+
+        original_call = route.dependant.call
+        if getattr(original_call, "_spellbee_teacher_guard", False):
+            continue
+
+        async def guarded_teacher_call(*args, __original=original_call, **kwargs):
+            user = kwargs.get("user")
+            if not user:
+                raise HTTPException(status_code=401, detail="Not authenticated")
+            await require_teacher_account(user)
+            return await __original(*args, **kwargs)
+
+        guarded_teacher_call._spellbee_teacher_guard = True
+        route.dependant.call = guarded_teacher_call
+        route.endpoint = guarded_teacher_call
+
     # ---------------- teacher assignments ----------------
     @api_router.post("/assignments")
     async def create_assignment(
         body: AssignmentCreateBody,
         user: dict = Depends(get_current_user),
     ):
+        await require_teacher_account(user)
         words = _clean_words(body.words)
         due = _parse_due(body.due_at)
 
@@ -157,6 +263,7 @@ def register_teacher_routes(
 
     @api_router.get("/assignments")
     async def list_assignments(user: dict = Depends(get_current_user)):
+        await require_teacher_account(user)
         teacher_id = str(user["_id"])
         rows = await db.assignments.find(
             {"teacher_id": teacher_id},

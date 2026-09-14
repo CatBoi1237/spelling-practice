@@ -3,6 +3,7 @@ import { Toaster } from "sonner";
 import { AppProvider } from "@/context/AppContext";
 import { AuthProvider } from "@/context/AuthContext";
 import Layout from "@/components/Layout";
+import TeacherAccountGate from "@/components/TeacherAccountGate";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import PwaUpdatePrompt from "@/components/PwaUpdatePrompt";
@@ -32,6 +33,10 @@ import Learn from "@/pages/Learn";
 import Leaderboards from "@/pages/Leaderboards";
 import "@/App.css";
 
+function teacherPage(page) {
+  return <TeacherAccountGate>{page}</TeacherAccountGate>;
+}
+
 function App() {
   return (
     <ErrorBoundary>
@@ -50,12 +55,12 @@ function App() {
               <Route path="/daily" element={<Daily />} />
               <Route path="/multiplayer" element={<MultiplayerShell />} />
               <Route path="/join" element={<Join />} />
-              <Route path="/word-lists" element={<CustomWordLists />} />
+              <Route path="/word-lists" element={teacherPage(<CustomWordLists />)} />
               <Route path="/saved-words" element={<SavedWords />} />
-              <Route path="/teacher" element={<TeacherDashboard />} />
-              <Route path="/assignments" element={<TeacherAssignments />} />
+              <Route path="/teacher" element={teacherPage(<TeacherDashboard />)} />
+              <Route path="/assignments" element={teacherPage(<TeacherAssignments />)} />
               <Route path="/assignment/:code" element={<Assignment />} />
-              <Route path="/assignments/:code/report" element={<AssignmentReport />} />
+              <Route path="/assignments/:code/report" element={teacherPage(<AssignmentReport />)} />
               <Route path="/room/:code" element={<RoomShell />} />
               <Route path="/classroom/:code" element={<ClassroomShell />} />
               <Route path="/signin" element={<SignIn />} />

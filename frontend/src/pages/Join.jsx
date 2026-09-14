@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, ClipboardList, GraduationCap, Loader2, ScanLine, Swords } from "lucide-react";
+import { ArrowRight, ClipboardList, GraduationCap, Loader2, ScanLine, School, Swords } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -11,6 +11,7 @@ const TYPE_META = {
   race: { label: "Race", icon: Swords, path: (code) => `/room/${code}`, tone: "indigo" },
   classroom: { label: "Classroom", icon: GraduationCap, path: (code) => `/classroom/${code}`, tone: "amber" },
   assignment: { label: "Assignment", icon: ClipboardList, path: (code) => `/assignment/${code}`, tone: "emerald" },
+  class: { label: "Class", icon: School, path: (code) => `/class/${code}`, tone: "cyan" },
 };
 
 export default function Join() {
@@ -34,16 +35,18 @@ export default function Join() {
 
     setBusy(true);
     try {
-      const [race, classroom, assignment] = await Promise.allSettled([
+      const [race, classroom, assignment, schoolClass] = await Promise.allSettled([
         api.get(`/rooms/${cleanCode}`),
         api.get(`/classrooms/${cleanCode}`, { params: { player_id: playerId } }),
         api.get(`/assignments/${cleanCode}`, { params: { player_id: playerId } }),
+        api.get(`/classes/${cleanCode}`, { params: { player_id: playerId } }),
       ]);
 
       const found = [];
       if (race.status === "fulfilled") found.push("race");
       if (classroom.status === "fulfilled") found.push("classroom");
       if (assignment.status === "fulfilled") found.push("assignment");
+      if (schoolClass.status === "fulfilled") found.push("class");
 
       if (found.length === 1) {
         navigate(TYPE_META[found[0]].path(cleanCode));
@@ -55,14 +58,14 @@ export default function Join() {
         return;
       }
 
-      toast.error("No Race, Classroom or Assignment was found with that code.");
+      toast.error("No Race, Classroom, Assignment or Class was found with that code.");
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       <header className="relative overflow-hidden rounded-[2rem] border border-indigo-500/25 bg-gradient-to-br from-indigo-500/15 via-slate-900 to-amber-950/20 p-7 sm:p-10">
         <div className="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-indigo-500/10 blur-3xl" />
         <div className="relative">
@@ -72,8 +75,8 @@ export default function Join() {
           <h1 className="mt-4 font-heading text-4xl font-black tracking-tight text-slate-50 sm:text-5xl">
             One code. Anywhere in SpellBee.
           </h1>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-400 sm:text-base">
-            Enter the six-character code your friend or teacher gave you. SpellBee will detect whether it is a Race, Classroom game or Assignment.
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400 sm:text-base">
+            Enter the six-character code your friend or teacher gave you. SpellBee can open a Race, live Classroom, Assignment or reusable Class roster.
           </p>
         </div>
       </header>
@@ -110,7 +113,7 @@ export default function Join() {
           <div className="mt-5 rounded-2xl border border-amber-500/25 bg-amber-500/5 p-4">
             <div className="text-sm font-bold text-amber-200">That code matches more than one SpellBee activity.</div>
             <p className="mt-1 text-xs text-slate-400">Choose the one you were invited to.</p>
-            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               {matches.map((type) => {
                 const meta = TYPE_META[type];
                 const Icon = meta.icon;
@@ -118,7 +121,9 @@ export default function Join() {
                   ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/20"
                   : meta.tone === "amber"
                     ? "border-amber-500/30 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20"
-                    : "border-indigo-500/30 bg-indigo-500/10 text-indigo-200 hover:bg-indigo-500/20";
+                    : meta.tone === "cyan"
+                      ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20"
+                      : "border-indigo-500/30 bg-indigo-500/10 text-indigo-200 hover:bg-indigo-500/20";
                 return (
                   <button
                     key={type}
@@ -135,10 +140,11 @@ export default function Join() {
         )}
       </form>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <InfoCard icon={Swords} title="Race Mode" text="Everyone hears and spells their own words while the live progress board updates." />
         <InfoCard icon={GraduationCap} title="Classroom Mode" text="Your teacher controls the word and audio while you type your answer on your device." />
         <InfoCard icon={ClipboardList} title="Assignment" text="Complete teacher-set spelling independently, then see your score and words to practise again." />
+        <InfoCard icon={School} title="Class" text="Join a teacher roster once and see class assignments whenever they are added." />
       </div>
     </div>
   );

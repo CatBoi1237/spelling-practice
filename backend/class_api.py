@@ -459,3 +459,12 @@ def register_class_routes(
             view = await public_class_view(row, pid)
             classes.append(view)
         return {"classes": classes}
+
+    from classroom_report_api import register_classroom_report_routes
+
+    register_classroom_report_routes(
+        api_router=api_router,
+        db=db,
+        get_current_user=get_current_user,
+        require_teacher_account=require_teacher_account,
+    )

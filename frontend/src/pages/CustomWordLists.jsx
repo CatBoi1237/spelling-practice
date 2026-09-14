@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   BookOpenCheck,
+  Download,
   Edit3,
   ListPlus,
   Save,
   Trash2,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,6 +30,7 @@ export default function CustomWordLists() {
   const { user } = useAuth();
   const [lists, setLists] = useState(() => getCustomWordLists());
   const [form, setForm] = useState(EMPTY_FORM);
+  const importRef = useRef(null);
 
   const words = useMemo(() => parseCustomWords(form.text), [form.text]);
   const validCount = isMultiplayerWordCount(words.length);
@@ -80,6 +83,67 @@ export default function CustomWordLists() {
     toast.success("Word list deleted.");
   };
 
+  const exportLists = () => {
+    if (!lists.length) {
+      toast.error("Create a word list before exporting.");
+      return;
+    }
+
+    const payload = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      lists: lists.map((list) => ({ name: list.name, words: list.words })),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `spellbee-word-lists-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    toast.success(`${lists.length} word list${lists.length === 1 ? "" : "s"} exported.`);
+  };
+
+  const importLists = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const candidates = Array.isArray(parsed) ? parsed : parsed?.lists;
+      if (!Array.isArray(candidates) || !candidates.length) {
+        throw new Error("This file does not contain any SpellBee word lists.");
+      }
+
+      let imported = 0;
+      let skipped = 0;
+      for (const candidate of candidates.slice(0, 100)) {
+        try {
+          const importedWords = Array.isArray(candidate?.words)
+            ? candidate.words
+            : parseCustomWords(candidate?.text || "");
+          saveCustomWordList({
+            name: String(candidate?.name || "Imported list").slice(0, 60),
+            words: importedWords,
+          });
+          imported += 1;
+        } catch {
+          skipped += 1;
+        }
+      }
+
+      refresh();
+      if (!imported) {
+        throw new Error("No valid lists were found. Lists must contain exactly 5, 10, 15, or 25 unique words.");
+      }
+      toast.success(`${imported} list${imported === 1 ? "" : "s"} imported${skipped ? ` · ${skipped} skipped` : ""}.`);
+    } catch (error) {
+      toast.error(error?.message || "Could not import this file.");
+    }
+  };
+
   if (!user) {
     return (
       <div className="mx-auto max-w-2xl rounded-3xl border border-amber-500/25 bg-slate-900/60 p-8 text-center sm:p-10">
@@ -103,15 +167,38 @@ export default function CustomWordLists() {
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <header>
-        <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-amber-300">
-          <ListPlus className="h-3 w-3" /> Teacher tools
-        </span>
-        <h1 className="mt-4 font-heading text-4xl font-black tracking-tight text-slate-50 sm:text-5xl">
-          Custom word lists
-        </h1>
-        <p className="mt-2 max-w-3xl text-slate-400">
-          Paste your own spelling words, save the list, then use it in Race or Classroom Mode. Lists are saved in this browser on this device.
-        </p>
+        <div className="flex flex-wrap items-end justify-between gap-5">
+          <div>
+            <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-amber-300">
+              <ListPlus className="h-3 w-3" /> Teacher tools
+            </span>
+            <h1 className="mt-4 font-heading text-4xl font-black tracking-tight text-slate-50 sm:text-5xl">
+              Custom word lists
+            </h1>
+            <p className="mt-2 max-w-3xl text-slate-400">
+              Paste your own spelling words, save the list, then use it in Race or Classroom Mode. Lists are saved in this browser on this device.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <input ref={importRef} type="file" accept="application/json,.json" onChange={importLists} className="hidden" />
+            <button
+              type="button"
+              onClick={() => importRef.current?.click()}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-bold text-slate-200 hover:border-amber-500/40 hover:text-amber-300"
+            >
+              <Upload className="h-4 w-4" /> Import JSON
+            </button>
+            <button
+              type="button"
+              onClick={exportLists}
+              disabled={!lists.length}
+              className="inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-sm font-bold text-amber-300 hover:bg-amber-500/15 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Download className="h-4 w-4" /> Export lists
+            </button>
+          </div>
+        </div>
       </header>
 
       <div className="grid gap-7 lg:grid-cols-[1.05fr_0.95fr]">

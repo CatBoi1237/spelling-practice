@@ -1,36 +1,125 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Check, X, Play } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, GraduationCap, Play, Trophy, X } from "lucide-react";
 import { LESSONS } from "@/data/lessons";
-import { WORDS, PATTERN_META } from "@/data/words";
+import { DIFFICULTY_META, WORDS, PATTERN_META } from "@/data/words";
 import { useApp } from "@/context/AppContext";
+import { getWordStats, isMastered } from "@/lib/storage";
 import { playTone } from "@/lib/speech";
 import { Eyebrow, PrimaryButton, GhostButton } from "@/components/ui-bits";
 import { cn } from "@/lib/utils";
 
+const SCHOOL_PATHS = [
+  { id: "grade4", emoji: "🌱", message: "Build strong spelling foundations with everyday words and core patterns." },
+  { id: "grade5", emoji: "🌿", message: "Grow vocabulary, suffix skills and common tricky spellings." },
+  { id: "grade6", emoji: "🌳", message: "Strengthen longer words, pattern recognition and accuracy." },
+  { id: "year7", emoji: "🚀", message: "Bridge into secondary-school vocabulary and Spelling Bee training." },
+];
+
 export default function Learn() {
   const [active, setActive] = useState(null);
   const lesson = LESSONS.find((l) => l.id === active);
+  const navigate = useNavigate();
+  const wordStats = useMemo(() => getWordStats(), []);
+
+  const pathStats = useMemo(() => SCHOOL_PATHS.map((path) => {
+    const words = WORDS.filter((word) => word.difficulty === path.id);
+    const mastered = words.filter((word) => isMastered(wordStats[word.word])).length;
+    const attempted = words.filter((word) => (wordStats[word.word]?.attempts || 0) > 0).length;
+    return { ...path, total: words.length, mastered, attempted };
+  }), [wordStats]);
 
   if (lesson) return <Lesson lesson={lesson} onBack={() => setActive(null)} />;
 
   return (
-    <div className="space-y-8">
-      <header>
-        <Eyebrow>Learn</Eyebrow>
-        <h1 className="mt-2 font-heading text-4xl font-black tracking-tight text-slate-50 sm:text-5xl">Spelling rules that actually stick.</h1>
-        <p className="mt-2 max-w-xl text-base text-slate-400">Short lessons, real examples, a three-question check, then a focused practice round.</p>
+    <div className="space-y-10">
+      <header className="overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900/80 via-slate-950 to-emerald-950/25 p-6 sm:p-8">
+        <div className="flex flex-wrap items-end justify-between gap-5">
+          <div>
+            <Eyebrow>Learn</Eyebrow>
+            <h1 className="mt-2 font-heading text-4xl font-black tracking-tight text-slate-50 sm:text-5xl">Build skills, not just scores.</h1>
+            <p className="mt-2 max-w-2xl text-base text-slate-400">Follow your school-level path or learn a spelling rule, take a mini quiz, then practise it immediately.</p>
+          </div>
+          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-4 py-2 text-xs font-bold text-emerald-200">
+            <GraduationCap className="h-4 w-4" /> Grade 4 → Year 7
+          </span>
+        </div>
       </header>
-      <div data-testid="lessons-grid" className="stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {LESSONS.map((l) => (
-          <button key={l.id} data-testid={`lesson-${l.id}`} onClick={() => setActive(l.id)} className="group flex flex-col rounded-2xl border border-slate-800 bg-slate-900/40 p-5 text-left transition-[transform,border-color] hover:-translate-y-0.5 hover:border-amber-500/40">
-            <span className="text-3xl">{l.emoji}</span>
-            <h3 className="mt-3 font-heading text-lg font-bold text-slate-100">{l.title}</h3>
-            <p className="mt-1 flex-1 text-sm text-slate-400">{l.summary}</p>
-            <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-amber-400">Open lesson <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" /></span>
+
+      <section>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <Eyebrow>School paths</Eyebrow>
+            <h2 className="mt-1 font-heading text-3xl font-black text-slate-50">Learn at your year level</h2>
+            <p className="mt-2 max-w-2xl text-sm text-slate-400">Each path uses the curated words for that level. Mastery means getting a word correct three times in a row.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/progress")}
+            className="inline-flex items-center gap-2 text-sm font-bold text-amber-400 hover:text-amber-300"
+          >
+            <Trophy className="h-4 w-4" /> View progress
           </button>
-        ))}
-      </div>
+        </div>
+
+        <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {pathStats.map((path) => {
+            const masteryPct = path.total ? Math.round((path.mastered / path.total) * 100) : 0;
+            const attemptedPct = path.total ? Math.round((path.attempted / path.total) * 100) : 0;
+            return (
+              <article key={path.id} className="group rounded-3xl border border-slate-800 bg-slate-900/40 p-5 transition hover:-translate-y-0.5 hover:border-emerald-500/35">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-3xl">{path.emoji}</span>
+                  <span className="rounded-full border border-slate-700 bg-slate-950/60 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    {path.mastered}/{path.total} mastered
+                  </span>
+                </div>
+                <h3 className="mt-4 font-heading text-2xl font-black text-slate-100">{DIFFICULTY_META[path.id]?.label || path.id}</h3>
+                <p className="mt-2 min-h-[60px] text-sm leading-relaxed text-slate-400">{path.message}</p>
+
+                <div className="mt-5">
+                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    <span>Mastery</span>
+                    <span>{masteryPct}%</span>
+                  </div>
+                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-800">
+                    <div className="h-full rounded-full bg-emerald-400 transition-[width]" style={{ width: `${masteryPct}%` }} />
+                  </div>
+                  {path.attempted > 0 && path.mastered < path.total && (
+                    <div className="mt-2 text-[11px] text-slate-500">{attemptedPct}% of this level explored</div>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => navigate(`/practice?mode=ten&difficulty=${path.id}`)}
+                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-emerald-400"
+                >
+                  <Play className="h-4 w-4" /> Practise {DIFFICULTY_META[path.id]?.label}
+                </button>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section>
+        <div>
+          <Eyebrow>Spelling lessons</Eyebrow>
+          <h2 className="mt-1 font-heading text-3xl font-black text-slate-50">Rules that actually stick</h2>
+          <p className="mt-2 max-w-xl text-sm text-slate-400">Short lessons, real examples, a three-question check, then a focused practice round.</p>
+        </div>
+        <div data-testid="lessons-grid" className="stagger mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {LESSONS.map((l) => (
+            <button key={l.id} data-testid={`lesson-${l.id}`} onClick={() => setActive(l.id)} className="group flex flex-col rounded-2xl border border-slate-800 bg-slate-900/40 p-5 text-left transition-[transform,border-color] hover:-translate-y-0.5 hover:border-amber-500/40">
+              <span className="text-3xl">{l.emoji}</span>
+              <h3 className="mt-3 font-heading text-lg font-bold text-slate-100">{l.title}</h3>
+              <p className="mt-1 flex-1 text-sm text-slate-400">{l.summary}</p>
+              <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-amber-400">Open lesson <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" /></span>
+            </button>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

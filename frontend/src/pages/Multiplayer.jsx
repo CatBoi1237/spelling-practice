@@ -18,7 +18,7 @@ const DIFFS = ["easy", "medium", "hard", "extreme", "mixed"];
 
 export default function Multiplayer() {
   const navigate = useNavigate();
-  const { user, playerName, renameGuest } = useAuth();
+  const { user, isTeacher, playerName, renameGuest } = useAuth();
   const playerId = user?.id || getPlayerId();
 
   const [wordCount, setWordCount] = useState(10);
@@ -35,13 +35,14 @@ export default function Multiplayer() {
     if (!user) renameGuest(name);
   };
 
-  const selectedList = selectedWordListId
+  const selectedList = isTeacher && selectedWordListId
     ? getCustomWordList(selectedWordListId)
     : null;
   const usingCustomList = !!selectedList;
   const effectiveWordCount = selectedList?.words?.length || wordCount;
 
   const requireSelectedList = () => {
+    if (!isTeacher) return null;
     if (!selectedWordListId) return null;
     const list = getCustomWordList(selectedWordListId);
     if (!list) {
@@ -99,6 +100,7 @@ export default function Multiplayer() {
   };
 
   const createClassroom = async () => {
+    if (!isTeacher) return;
     if (!user) {
       toast.error("Teachers need to sign in before hosting Classroom Mode.");
       navigate("/signin");
@@ -134,6 +136,7 @@ export default function Multiplayer() {
 
   const joinClassroom = async (e) => {
     e.preventDefault();
+    if (isTeacher) return;
 
     const clean = classCode.trim().toUpperCase();
 
@@ -302,7 +305,7 @@ export default function Multiplayer() {
         </div>
 
         <div className="mt-7 grid gap-6 md:grid-cols-2">
-          <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-5">
+          {isTeacher && <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-5">
             <h3 className="font-heading text-xl font-bold text-slate-100">
               Host a classroom
             </h3>
@@ -344,9 +347,9 @@ export default function Multiplayer() {
               <School className="h-4 w-4" />
               Host Classroom Game
             </button>
-          </div>
+          </div>}
 
-          <form
+          {!isTeacher && <form
             onSubmit={joinClassroom}
             className="rounded-2xl border border-slate-800 bg-slate-950/40 p-5"
           >
@@ -373,7 +376,7 @@ export default function Multiplayer() {
             >
               Join classroom
             </button>
-          </form>
+          </form>}
         </div>
       </section>
     </div>

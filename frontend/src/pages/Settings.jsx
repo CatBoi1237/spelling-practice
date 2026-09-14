@@ -9,13 +9,30 @@ import { speak, VOICE_LANGS } from "@/lib/speech";
 import { DIFFICULTY_META } from "@/data/words";
 import { Eyebrow } from "@/components/ui-bits";
 import { cn } from "@/lib/utils";
+import { apiError } from "@/lib/api";
 
 export default function Settings() {
   const { settings, updateSettings, voices, theme, setTheme, updateStats } = useApp();
-  const { user, logout, playerName, renameGuest, syncNow, syncing, lastSync } = useAuth();
+  const { user, logout, playerName, renameGuest, syncNow, syncing, lastSync, switchAccountType } = useAuth();
   const navigate = useNavigate();
   const [confirmReset, setConfirmReset] = useState(false);
   const [guestName, setGuestName] = useState(playerName);
+  const [confirmType, setConfirmType] = useState(null);
+  const [switchingType, setSwitchingType] = useState(false);
+
+  const changeType = async () => {
+    setSwitchingType(true);
+    try {
+      await switchAccountType(confirmType);
+      toast.success(`Switched to ${confirmType === "teacher" ? "Teacher" : "Student"}.`);
+      setConfirmType(null);
+      navigate(confirmType === "teacher" ? "/teacher" : "/my-classes");
+    } catch (error) {
+      toast.error(apiError(error, error.message || "Could not switch account type."));
+    } finally {
+      setSwitchingType(false);
+    }
+  };
 
   const voiceOpts = { rate: settings.rate, voiceName: settings.voiceName, voiceLang: settings.voiceLang };
   const englishVoices = voices.filter((v) => /^en/i.test(v.lang));
@@ -102,6 +119,19 @@ export default function Settings() {
       <Section title="Account">
         {user ? (
           <>
+          <Row label="Account type" hint={`Currently ${user.account_type === "teacher" ? "Teacher" : "Student"}. Switch whenever you need the other workspace.`}>
+            <button type="button" data-testid="settings-switch-account-type" onClick={() => setConfirmType(user.account_type === "teacher" ? "student" : "teacher")} className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-200">
+              Switch to {user.account_type === "teacher" ? "Student" : "Teacher"}
+            </button>
+          </Row>
+          {confirmType && <div role="dialog" aria-label="Confirm account type switch" className="rounded-xl border border-amber-500/30 bg-slate-950 p-5">
+            <h3 className="font-bold text-slate-50">Switch to {confirmType === "teacher" ? "Teacher" : "Student"}?</h3>
+            <p className="mt-2 text-sm text-slate-300">{confirmType === "teacher" ? "Teacher tools will open and Student class and assignment options will be hidden." : "Student class and assignment options will open and Teacher tools will be hidden."} Your profile, progress, achievements, saved words and synced word lists stay with this account. Classes, assignments, reports, memberships and submission history remain stored and reappear when you switch back. We will sync your progress before changing roles.</p>
+            <div className="mt-4 flex gap-2">
+              <button type="button" data-testid="settings-switch-confirm" disabled={switchingType} onClick={changeType} className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-bold text-slate-950 disabled:opacity-50">{switchingType ? "Switching…" : "Confirm switch"}</button>
+              <button type="button" disabled={switchingType} onClick={() => setConfirmType(null)} className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200">Cancel</button>
+            </div>
+          </div>}
           <Row label="Cloud sync" hint={lastSync ? `Last synced ${new Date(lastSync).toLocaleString()}` : "Progress, streaks and mistakes sync to your account"}>
             <button data-testid="settings-sync-now" disabled={syncing} onClick={async () => { const ok = await syncNow(); ok ? toast.success("Progress synced.") : toast.error("Sync failed — we'll retry after your next session."); }} className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200 hover:border-amber-500/40 hover:text-amber-300 disabled:opacity-50">
               {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudUpload className="h-4 w-4" />} Sync now

@@ -16,7 +16,7 @@ const TYPE_META = {
 
 export default function Join() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isTeacher } = useAuth();
   const playerId = user?.id || getPlayerId();
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -38,8 +38,8 @@ export default function Join() {
       const [race, classroom, assignment, schoolClass] = await Promise.allSettled([
         api.get(`/rooms/${cleanCode}`),
         api.get(`/classrooms/${cleanCode}`, { params: { player_id: playerId } }),
-        api.get(`/assignments/${cleanCode}`, { params: { player_id: playerId } }),
-        api.get(`/classes/${cleanCode}`, { params: { player_id: playerId } }),
+        isTeacher ? Promise.reject(new Error("Student account required")) : api.get(`/assignments/${cleanCode}`, { params: { player_id: playerId } }),
+        isTeacher ? Promise.reject(new Error("Student account required")) : api.get(`/classes/${cleanCode}`, { params: { player_id: playerId } }),
       ]);
 
       const found = [];

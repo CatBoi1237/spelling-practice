@@ -4,6 +4,7 @@ import { AppProvider } from "@/context/AppContext";
 import { AuthProvider } from "@/context/AuthContext";
 import Layout from "@/components/Layout";
 import TeacherAccountGate from "@/components/TeacherAccountGate";
+import StudentAccountGate from "@/components/StudentAccountGate";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import PwaUpdatePrompt from "@/components/PwaUpdatePrompt";
@@ -43,6 +44,10 @@ function teacherPage(page) {
   return <TeacherAccountGate>{page}</TeacherAccountGate>;
 }
 
+function studentPage(page) {
+  return <StudentAccountGate>{page}</StudentAccountGate>;
+}
+
 function App() {
   return (
     <ErrorBoundary>
@@ -63,16 +68,16 @@ function App() {
               <Route path="/join" element={<Join />} />
               <Route path="/word-lists" element={teacherPage(<CustomWordLists />)} />
               <Route path="/saved-words" element={<SavedWords />} />
-              <Route path="/my-classes" element={<MyClasses />} />
+              <Route path="/my-classes" element={studentPage(<MyClasses />)} />
               <Route path="/teacher" element={teacherPage(<TeacherDashboard />)} />
               <Route path="/teacher/classes" element={teacherPage(<TeacherClasses />)} />
               <Route path="/teacher/classes/:code" element={teacherPage(<TeacherClassDetail />)} />
               <Route path="/teacher/reports" element={teacherPage(<TeacherReports />)} />
               <Route path="/teacher/reports/:reportId" element={teacherPage(<TeacherReportDetail />)} />
               <Route path="/assignments" element={teacherPage(<TeacherAssignments />)} />
-              <Route path="/assignment/:code" element={<Assignment />} />
+              <Route path="/assignment/:code" element={studentPage(<Assignment />)} />
               <Route path="/assignments/:code/report" element={teacherPage(<AssignmentReport />)} />
-              <Route path="/class/:code" element={<StudentClass />} />
+              <Route path="/class/:code" element={studentPage(<StudentClass />)} />
               <Route path="/room/:code" element={<RoomShell />} />
               <Route path="/classroom/:code" element={<ClassroomShell />} />
               <Route path="/signin" element={<SignIn />} />

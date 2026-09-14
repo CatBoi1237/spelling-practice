@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getCustomWordLists } from "@/lib/customWordLists";
 
 export default function WordSourcePicker({ selectedId, onChange }) {
-  const { user } = useAuth();
+  const { user, isTeacher } = useAuth();
   const [searchParams] = useSearchParams();
   const [lists, setLists] = useState(() => getCustomWordLists());
 
@@ -25,16 +25,20 @@ export default function WordSourcePicker({ selectedId, onChange }) {
   }, []);
 
   useEffect(() => {
-    if (!user || !requestedListId) return;
+    if (!isTeacher || !requestedListId) return;
     const exists = lists.some((item) => item.id === requestedListId);
     if (exists && selectedId !== requestedListId) {
       onChange(requestedListId);
     }
-  }, [user, requestedListId, lists, selectedId, onChange]);
+  }, [isTeacher, requestedListId, lists, selectedId, onChange]);
+
+  useEffect(() => {
+    if (!isTeacher && selectedId) onChange(null);
+  }, [isTeacher, selectedId, onChange]);
 
   const selected = useMemo(
-    () => lists.find((item) => item.id === selectedId) || null,
-    [lists, selectedId]
+    () => isTeacher ? lists.find((item) => item.id === selectedId) || null : null,
+    [isTeacher, lists, selectedId]
   );
 
   return (
@@ -52,21 +56,21 @@ export default function WordSourcePicker({ selectedId, onChange }) {
           </p>
         </div>
 
-        {user ? (
+        {isTeacher ? (
           <Link
             to="/word-lists"
             className="inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-sm font-semibold text-amber-300 hover:bg-amber-500/15"
           >
             <ListPlus className="h-4 w-4" /> Manage lists
           </Link>
-        ) : (
+        ) : !user ? (
           <Link
             to="/signin"
             className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-2.5 text-sm font-semibold text-slate-300 hover:text-white"
           >
             <LockKeyhole className="h-4 w-4" /> Sign in for custom lists
           </Link>
-        )}
+        ) : null}
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-[180px_1fr] sm:items-center">
@@ -75,13 +79,13 @@ export default function WordSourcePicker({ selectedId, onChange }) {
         </label>
 
         <select
-          value={user ? selectedId || "" : ""}
-          disabled={!user}
+          value={isTeacher ? selectedId || "" : ""}
+          disabled={!isTeacher}
           onChange={(e) => onChange(e.target.value || null)}
           className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-100 outline-none ring-amber-500/40 focus:border-amber-500/50 focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <option value="">Built-in SpellBee words</option>
-          {lists.map((list) => (
+          {isTeacher && lists.map((list) => (
             <option key={list.id} value={list.id}>
               {list.name} — {list.words.length} words
             </option>

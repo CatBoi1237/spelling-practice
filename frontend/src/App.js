@@ -25,6 +25,8 @@ import TeacherDashboard from "@/pages/TeacherDashboard";
 import TeacherAssignments from "@/pages/TeacherAssignments";
 import TeacherClasses from "@/pages/TeacherClasses";
 import TeacherClassDetail from "@/pages/TeacherClassDetail";
+import TeacherReports from "@/pages/TeacherReports";
+import TeacherReportDetail from "@/pages/TeacherReportDetail";
 import StudentClass from "@/pages/StudentClass";
 import Assignment from "@/pages/Assignment";
 import AssignmentReport from "@/pages/AssignmentReport";
@@ -63,6 +65,8 @@ function App() {
               <Route path="/teacher" element={teacherPage(<TeacherDashboard />)} />
               <Route path="/teacher/classes" element={teacherPage(<TeacherClasses />)} />
               <Route path="/teacher/classes/:code" element={teacherPage(<TeacherClassDetail />)} />
+              <Route path="/teacher/reports" element={teacherPage(<TeacherReports />)} />
+              <Route path="/teacher/reports/:reportId" element={teacherPage(<TeacherReportDetail />)} />
               <Route path="/assignments" element={teacherPage(<TeacherAssignments />)} />
               <Route path="/assignment/:code" element={<Assignment />} />
               <Route path="/assignments/:code/report" element={teacherPage(<AssignmentReport />)} />

@@ -8,6 +8,7 @@ import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
 import { BeeMascot } from "@/components/BeeMascot";
 import GlobalSearch from "@/components/GlobalSearch";
+import MobileMoreMenu from "@/components/MobileMoreMenu";
 import { cn } from "@/lib/utils";
 
 const HOME_NAV = { to: "/", label: "Home", icon: HomeIcon, testId: "nav-home" };
@@ -309,46 +310,11 @@ export default function Layout() {
         </nav>
       )}
 
-      {moreOpen && (
-        <div className="fixed inset-0 z-30 lg:hidden" onClick={() => setMoreOpen(false)}>
-          <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" />
-          <div
-            data-testid="mobile-more-sheet"
-            className="absolute inset-x-3 bottom-20 max-h-[72vh] overflow-y-auto rounded-3xl border border-slate-800 bg-slate-900 p-4 shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <div className="font-heading text-lg font-black text-slate-100">More SpellBee</div>
-                <div className="text-[11px] text-slate-500">Everything grouped by what you want to do.</div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setMoreOpen(false)}
-                className="grid h-9 w-9 place-items-center rounded-xl border border-slate-800 text-slate-400"
-                aria-label="Close menu"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="space-y-5">
-              {MORE_GROUPS.map((group) => (
-                <section key={group.id}>
-                  <div className="mb-2 px-1 text-[9px] font-black uppercase tracking-[0.24em] text-slate-500">
-                    {group.label}
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {group.items.map((item) => (
-                      <NavItem key={item.to} item={item} compact onClick={() => setMoreOpen(false)} />
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      <MobileMoreMenu
+        open={moreOpen}
+        groups={MORE_GROUPS}
+        onClose={() => setMoreOpen(false)}
+      />
     </div>
   );
 }

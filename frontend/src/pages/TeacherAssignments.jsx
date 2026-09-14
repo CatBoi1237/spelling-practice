@@ -19,6 +19,7 @@ import { useAuth } from "@/context/AuthContext";
 import { api, apiError } from "@/lib/api";
 import { getCustomWordLists } from "@/lib/customWordLists";
 import { DIFFICULTY_META, WORDS_BY_DIFFICULTY } from "@/data/words";
+import AssignmentQrButton from "@/components/AssignmentQrButton";
 
 const SCHOOL_LEVELS = ["grade4", "grade5", "grade6", "year7"];
 const COUNTS = [5, 10, 15, 25];
@@ -158,7 +159,7 @@ export default function TeacherAssignments() {
           <div>
             <div className="text-[10px] font-black uppercase tracking-[0.24em] text-indigo-300">Teacher · Assignments</div>
             <h1 className="mt-2 font-heading text-4xl font-black text-slate-50 sm:text-5xl">Send spelling practice home.</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">Choose a school level or one of your word lists, share one link, then see completion, accuracy, missed words and response time.</p>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">Choose a school level or one of your word lists, share a link, QR code or six-character code, then see completion, accuracy, missed words and response time.</p>
           </div>
           <button onClick={load} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-bold text-slate-300 hover:text-white disabled:opacity-50">
             <RefreshCcw className={loading ? "h-4 w-4 animate-spin" : "h-4 w-4"} /> Refresh
@@ -251,6 +252,7 @@ export default function TeacherAssignments() {
 
                   <div className="mt-4 flex flex-wrap gap-2">
                     <button onClick={() => copyLink(assignment.code)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 hover:text-white"><Copy className="h-3.5 w-3.5" /> Copy link</button>
+                    <AssignmentQrButton code={assignment.code} title={assignment.title} />
                     <Link to={`/assignment/${assignment.code}`} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 hover:text-white"><ExternalLink className="h-3.5 w-3.5" /> Student view</Link>
                     <Link to={`/assignments/${assignment.code}/report`} className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-xs font-bold text-indigo-300"><BarChart3 className="h-3.5 w-3.5" /> Report</Link>
                     <button onClick={() => toggle(assignment)} className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-xs font-bold text-amber-300"><CheckCircle2 className="h-3.5 w-3.5" /> {assignment.status === "active" ? "Close" : "Reopen"}</button>

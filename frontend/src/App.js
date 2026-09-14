@@ -28,6 +28,7 @@ import TeacherClassDetail from "@/pages/TeacherClassDetail";
 import TeacherReports from "@/pages/TeacherReports";
 import TeacherReportDetail from "@/pages/TeacherReportDetail";
 import StudentClass from "@/pages/StudentClass";
+import MyClasses from "@/pages/MyClasses";
 import Assignment from "@/pages/Assignment";
 import AssignmentReport from "@/pages/AssignmentReport";
 import SignIn from "@/pages/SignIn";
@@ -62,6 +63,7 @@ function App() {
               <Route path="/join" element={<Join />} />
               <Route path="/word-lists" element={teacherPage(<CustomWordLists />)} />
               <Route path="/saved-words" element={<SavedWords />} />
+              <Route path="/my-classes" element={<MyClasses />} />
               <Route path="/teacher" element={teacherPage(<TeacherDashboard />)} />
               <Route path="/teacher/classes" element={teacherPage(<TeacherClasses />)} />
               <Route path="/teacher/classes/:code" element={teacherPage(<TeacherClassDetail />)} />

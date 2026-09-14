@@ -5,6 +5,7 @@ import {
   BarChart3,
   CalendarClock,
   ClipboardList,
+  Cloud,
   GraduationCap,
   ListChecks,
   Loader2,
@@ -16,45 +17,6 @@ import { useAuth } from "@/context/AuthContext";
 import { getCustomWordLists } from "@/lib/customWordLists";
 import { api } from "@/lib/api";
 
-const REPORT_PREFIX = "spellbee.classroom.report.";
-
-function recentClassroomReports() {
-  if (typeof window === "undefined") return [];
-
-  const reports = [];
-  for (let i = 0; i < localStorage.length; i += 1) {
-    const key = localStorage.key(i);
-    if (!key?.startsWith(REPORT_PREFIX)) continue;
-
-    try {
-      const report = JSON.parse(localStorage.getItem(key) || "null");
-      if (!report) continue;
-      const code = report.code || key.slice(REPORT_PREFIX.length).toUpperCase();
-      const rounds = Object.values(report.rounds || {});
-      const finalizedRounds = rounds.filter((round) => round?.finalized).length;
-      const students = Object.values(report.students || {});
-      const latest = rounds
-        .map((round) => round?.revealed_at || round?.started_at)
-        .filter(Boolean)
-        .sort()
-        .at(-1);
-
-      reports.push({
-        code,
-        students: students.length,
-        finalizedRounds,
-        updatedAt: latest || null,
-      });
-    } catch {
-      // Ignore old or damaged local report entries.
-    }
-  }
-
-  return reports
-    .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")))
-    .slice(0, 6);
-}
-
 function dueLabel(value) {
   if (!value) return "No due date";
   const date = new Date(value);
@@ -62,25 +24,35 @@ function dueLabel(value) {
   return date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
 }
 
+function dateLabel(value) {
+  if (!value) return "Unknown date";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Unknown date";
+  return date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+}
+
 export default function TeacherDashboard() {
   const { user } = useAuth();
   const lists = useMemo(() => getCustomWordLists(), []);
-  const reports = useMemo(() => recentClassroomReports(), []);
   const [assignments, setAssignments] = useState([]);
   const [assignmentsLoading, setAssignmentsLoading] = useState(false);
   const [classes, setClasses] = useState([]);
   const [classesLoading, setClassesLoading] = useState(false);
+  const [reports, setReports] = useState([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
 
   useEffect(() => {
     if (!user) {
       setAssignments([]);
       setClasses([]);
+      setReports([]);
       return;
     }
 
     let alive = true;
     setAssignmentsLoading(true);
     setClassesLoading(true);
+    setReportsLoading(true);
 
     api.get("/assignments")
       .then(({ data }) => {
@@ -102,6 +74,17 @@ export default function TeacherDashboard() {
       })
       .finally(() => {
         if (alive) setClassesLoading(false);
+      });
+
+    api.get("/teacher/classroom-reports")
+      .then(({ data }) => {
+        if (alive) setReports(data.reports || []);
+      })
+      .catch(() => {
+        if (alive) setReports([]);
+      })
+      .finally(() => {
+        if (alive) setReportsLoading(false);
       });
 
     return () => {
@@ -145,7 +128,7 @@ export default function TeacherDashboard() {
               Ready for class, {user.name}?
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">
-              Rosters, live classes, homework, synced word lists and student results are grouped into one teacher workspace.
+              Rosters, live classes, homework, cloud reports, synced word lists and student results are grouped into one teacher workspace.
             </p>
           </div>
 
@@ -163,10 +146,10 @@ export default function TeacherDashboard() {
         <Stat icon={Users} label="Classes" value={classesLoading ? "…" : activeClasses.length} hint={`${rosterStudents} roster student${rosterStudents === 1 ? "" : "s"}`} />
         <Stat icon={ClipboardList} label="Active assignments" value={assignmentsLoading ? "…" : activeAssignments.length} hint={`${assignments.length} total assignment${assignments.length === 1 ? "" : "s"}`} />
         <Stat icon={GraduationCap} label="Assignment students" value={assignmentsLoading ? "…" : assignmentStudents} hint="Completions across assignments" />
-        <Stat icon={BarChart3} label="Classroom reports" value={reports.length} hint="Recent live-class results" />
+        <Stat icon={Cloud} label="Classroom reports" value={reportsLoading ? "…" : reports.length} hint="Cloud-saved live class history" />
       </section>
 
-      <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
+      <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         <QuickAction
           icon={Users}
           title="Classes & Rosters"
@@ -180,6 +163,13 @@ export default function TeacherDashboard() {
           body="Choose a built-in level or one of your custom lists, then start a teacher-led live game."
           to="/multiplayer"
           action="Create game"
+        />
+        <QuickAction
+          icon={Cloud}
+          title="Classroom Reports"
+          body="Open cloud-saved live class history, response times, missed words and downloadable reports."
+          to="/teacher/reports"
+          action="View reports"
         />
         <QuickAction
           icon={ClipboardList}
@@ -198,7 +188,7 @@ export default function TeacherDashboard() {
         <QuickAction
           icon={GraduationCap}
           title="Student Join"
-          body="Show students one join page for Race, Classroom and Assignment codes."
+          body="Show students one join page for Race, Classroom, Assignment and Class codes."
           to="/join"
           action="Open join"
         />
@@ -273,28 +263,33 @@ export default function TeacherDashboard() {
         </div>
 
         <div className="rounded-3xl border border-slate-800 bg-slate-900/40 p-6">
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-[0.24em] text-indigo-300">Classroom history</div>
-            <h2 className="mt-1 font-heading text-2xl font-bold text-slate-50">Recent reports</h2>
-            <p className="mt-1 text-xs text-slate-500">Live Classroom reports are currently saved on the teacher device that ran the class.</p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-[0.24em] text-indigo-300">Cloud Classroom history</div>
+              <h2 className="mt-1 font-heading text-2xl font-bold text-slate-50">Recent reports</h2>
+              <p className="mt-1 text-xs text-slate-500">Saved to your Teacher account and available from any signed-in device.</p>
+            </div>
+            <Link to="/teacher/reports" className="shrink-0 text-sm font-bold text-indigo-300 hover:text-indigo-200">View all →</Link>
           </div>
 
           <div className="mt-5 space-y-3">
-            {reports.length ? reports.slice(0, 5).map((report) => (
+            {reportsLoading ? (
+              <div className="grid place-items-center py-10 text-slate-600"><Loader2 className="h-5 w-5 animate-spin" /></div>
+            ) : reports.length ? reports.slice(0, 5).map((report) => (
               <Link
-                key={report.code}
-                to={`/classroom/${report.code}`}
+                key={report.report_id}
+                to={`/teacher/reports/${encodeURIComponent(report.report_id)}`}
                 className="flex items-center justify-between gap-4 rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 transition hover:border-indigo-500/35"
               >
                 <div>
                   <div className="font-mono text-lg font-black tracking-[0.14em] text-slate-100">{report.code}</div>
-                  <div className="mt-0.5 text-xs text-slate-500">{report.students} students · {report.finalizedRounds} scored rounds</div>
+                  <div className="mt-0.5 text-xs text-slate-500">{dateLabel(report.finished_at)} · {report.summary?.students || 0} students · {report.summary?.accuracy || 0}%</div>
                 </div>
                 <ArrowRight className="h-4 w-4 text-slate-500" />
               </Link>
             )) : (
               <div className="rounded-2xl border border-dashed border-slate-800 p-7 text-center text-sm text-slate-500">
-                Classroom reports will appear here after you run a live game on this device.
+                Your next finished Classroom game will be saved here automatically.
               </div>
             )}
           </div>

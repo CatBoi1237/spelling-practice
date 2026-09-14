@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import {
   ArrowRight,
   BarChart3,
-  BookOpenCheck,
   CalendarClock,
   ClipboardList,
   GraduationCap,
@@ -69,15 +68,20 @@ export default function TeacherDashboard() {
   const reports = useMemo(() => recentClassroomReports(), []);
   const [assignments, setAssignments] = useState([]);
   const [assignmentsLoading, setAssignmentsLoading] = useState(false);
+  const [classes, setClasses] = useState([]);
+  const [classesLoading, setClassesLoading] = useState(false);
 
   useEffect(() => {
     if (!user) {
       setAssignments([]);
+      setClasses([]);
       return;
     }
 
     let alive = true;
     setAssignmentsLoading(true);
+    setClassesLoading(true);
+
     api.get("/assignments")
       .then(({ data }) => {
         if (alive) setAssignments(data.assignments || []);
@@ -89,6 +93,17 @@ export default function TeacherDashboard() {
         if (alive) setAssignmentsLoading(false);
       });
 
+    api.get("/teacher/classes")
+      .then(({ data }) => {
+        if (alive) setClasses(data.classes || []);
+      })
+      .catch(() => {
+        if (alive) setClasses([]);
+      })
+      .finally(() => {
+        if (alive) setClassesLoading(false);
+      });
+
     return () => {
       alive = false;
     };
@@ -97,6 +112,8 @@ export default function TeacherDashboard() {
   const activeAssignments = assignments.filter((assignment) => assignment.status === "active");
   const assignmentStudents = assignments.reduce((sum, assignment) => sum + Number(assignment.student_count || 0), 0);
   const recentAssignments = assignments.slice(0, 5);
+  const activeClasses = classes.filter((item) => !item.archived);
+  const rosterStudents = activeClasses.reduce((sum, item) => sum + Number(item.student_count || 0), 0);
 
   if (!user) {
     return (
@@ -128,38 +145,46 @@ export default function TeacherDashboard() {
               Ready for class, {user.name}?
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">
-              Live classes, homework, synced word lists and student results are now grouped into one teacher workspace.
+              Rosters, live classes, homework, synced word lists and student results are grouped into one teacher workspace.
             </p>
           </div>
 
           <Link
-            to="/multiplayer"
+            to="/teacher/classes"
             className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-3 font-bold text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400"
           >
-            <School className="h-4 w-4" /> Host a class
+            <Users className="h-4 w-4" /> Manage classes
           </Link>
         </div>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Stat icon={ListChecks} label="Saved lists" value={lists.length} hint="Cloud-synced teacher lists" />
+        <Stat icon={Users} label="Classes" value={classesLoading ? "…" : activeClasses.length} hint={`${rosterStudents} roster student${rosterStudents === 1 ? "" : "s"}`} />
         <Stat icon={ClipboardList} label="Active assignments" value={assignmentsLoading ? "…" : activeAssignments.length} hint={`${assignments.length} total assignment${assignments.length === 1 ? "" : "s"}`} />
-        <Stat icon={Users} label="Assignment students" value={assignmentsLoading ? "…" : assignmentStudents} hint="Completions across your assignments" />
+        <Stat icon={GraduationCap} label="Assignment students" value={assignmentsLoading ? "…" : assignmentStudents} hint="Completions across assignments" />
         <Stat icon={BarChart3} label="Classroom reports" value={reports.length} hint="Recent live-class results" />
       </section>
 
-      <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
+        <QuickAction
+          icon={Users}
+          title="Classes & Rosters"
+          body="Create reusable classes, keep student rosters and track class analytics over time."
+          to="/teacher/classes"
+          action="Manage classes"
+        />
         <QuickAction
           icon={School}
           title="Host Classroom"
-          body="Choose a built-in level or one of your custom lists, then start a teacher-led game."
+          body="Choose a built-in level or one of your custom lists, then start a teacher-led live game."
           to="/multiplayer"
           action="Create game"
         />
         <QuickAction
           icon={ClipboardList}
           title="Assignments"
-          body="Set independent spelling practice with a due date and attempts, then track every student's results."
+          body="Set independent spelling practice with a due date and attempts, then track results."
           to="/assignments"
           action="Manage assignments"
         />
@@ -171,8 +196,8 @@ export default function TeacherDashboard() {
           action="Manage lists"
         />
         <QuickAction
-          icon={Users}
-          title="Join page"
+          icon={GraduationCap}
+          title="Student Join"
           body="Show students one join page for Race, Classroom and Assignment codes."
           to="/join"
           action="Open join"

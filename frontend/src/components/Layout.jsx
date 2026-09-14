@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Sun, Moon, Monitor, Settings as SettingsIcon, BarChart3, Home as HomeIcon, CalendarDays, LogIn, LogOut,
-  Target, Trophy, Users, Library, Medal, GraduationCap, MoreHorizontal, X, ListChecks, ScanLine, School, UserRound,
+  Target, Trophy, Users, Library, Medal, GraduationCap, MoreHorizontal, X, ListChecks, ScanLine, School, UserRound, Bookmark,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
@@ -18,6 +18,7 @@ export const NAV = [
   { to: "/join", label: "Join Game", short: "Join", icon: ScanLine, testId: "nav-join" },
   { to: "/teacher", label: "Teacher Dashboard", short: "Teacher", icon: School, testId: "nav-teacher" },
   { to: "/word-lists", label: "My Word Lists", short: "Word Lists", icon: ListChecks, testId: "nav-word-lists" },
+  { to: "/saved-words", label: "Saved Words", short: "Saved", icon: Bookmark, testId: "nav-saved-words" },
   { to: "/library", label: "Word Library", icon: Library, testId: "nav-library" },
   { to: "/learn", label: "Learn", icon: GraduationCap, testId: "nav-learn" },
   { to: "/progress", label: "Progress", icon: BarChart3, testId: "nav-progress" },

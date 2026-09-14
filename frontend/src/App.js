@@ -23,6 +23,9 @@ import CustomWordLists from "@/pages/CustomWordLists";
 import SavedWords from "@/pages/SavedWords";
 import TeacherDashboard from "@/pages/TeacherDashboard";
 import TeacherAssignments from "@/pages/TeacherAssignments";
+import TeacherClasses from "@/pages/TeacherClasses";
+import TeacherClassDetail from "@/pages/TeacherClassDetail";
+import StudentClass from "@/pages/StudentClass";
 import Assignment from "@/pages/Assignment";
 import AssignmentReport from "@/pages/AssignmentReport";
 import SignIn from "@/pages/SignIn";
@@ -58,9 +61,12 @@ function App() {
               <Route path="/word-lists" element={teacherPage(<CustomWordLists />)} />
               <Route path="/saved-words" element={<SavedWords />} />
               <Route path="/teacher" element={teacherPage(<TeacherDashboard />)} />
+              <Route path="/teacher/classes" element={teacherPage(<TeacherClasses />)} />
+              <Route path="/teacher/classes/:code" element={teacherPage(<TeacherClassDetail />)} />
               <Route path="/assignments" element={teacherPage(<TeacherAssignments />)} />
               <Route path="/assignment/:code" element={<Assignment />} />
               <Route path="/assignments/:code/report" element={teacherPage(<AssignmentReport />)} />
+              <Route path="/class/:code" element={<StudentClass />} />
               <Route path="/room/:code" element={<RoomShell />} />
               <Route path="/classroom/:code" element={<ClassroomShell />} />
               <Route path="/signin" element={<SignIn />} />

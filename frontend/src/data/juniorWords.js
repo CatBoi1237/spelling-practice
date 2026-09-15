@@ -1,4 +1,4 @@
-// Extra junior word bank for learners below the original Year 7+ difficulty ladder.
+// Extra junior word bank for learners below the original competition difficulty ladder.
 // These entries deliberately use familiar school vocabulary and Australian/British spelling.
 // Existing words are de-duplicated when this bank is merged in words.js.
 
@@ -49,7 +49,15 @@ const grade4 = make("grade4", [
   ["minute", "noun", "a unit of time equal to sixty seconds.", "You have one minute left.", "Minute begins min- and ends -ute."],
   ["people", "noun", "human beings in general or a group of humans.", "Many people came to the school fair.", "People has eo and ends -ple."],
   ["piece", "noun", "a part of something.", "Take one piece of paper.", "Piece uses ie after p."],
-  ["school", "noun", "a place where students learn.", "Our school has a large library.", "School begins sch- and has double o."]
+  ["school", "noun", "a place where students learn.", "Our school has a large library.", "School begins sch- and has double o."],
+  ["artist", "noun", "a person who creates drawings, paintings, music or other art.", "The artist sketched the harbour at sunset.", "Artist begins with art and ends -ist."],
+  ["autumn", "noun", "the season between summer and winter.", "Leaves often change colour in autumn.", "Autumn has a silent n at the end."],
+  ["bottle", "noun", "a container with a narrow top for holding liquid.", "She filled her bottle before the hike.", "Bottle has double t and ends -le."],
+  ["build", "verb", "to make something by joining parts together.", "We will build a model bridge in class.", "Build starts bui, not bil."],
+  ["decimal", "noun", "a number written with a point to show parts of a whole.", "Write the answer as a decimal.", "Decimal begins deci- and ends -mal.", "Academic"],
+  ["famous", "adjective", "known by many people.", "The famous author visited our library.", "Famous ends -ous."],
+  ["imagine", "verb", "to form a picture or idea in your mind.", "Imagine a city under the sea.", "Imagine begins im- and ends -gine."],
+  ["journey", "noun", "a trip from one place to another.", "The train journey took two hours.", "Journey has our in the middle."]
 ]);
 
 const grade5 = make("grade5", [
@@ -82,7 +90,15 @@ const grade5 = make("grade5", [
   ["opposite", "adjective", "completely different or on the other side.", "Hot is the opposite of cold.", "Opposite has double p."],
   ["probably", "adverb", "most likely.", "It will probably rain this afternoon.", "Probably is probable + ly."],
   ["separate", "adjective", "not joined or kept apart.", "Put the papers into separate piles.", "Separate has a in the middle: sep-a-rate."],
-  ["straight", "adjective", "without a curve or bend.", "Draw a straight line with a ruler.", "Straight has aigh in the middle."]
+  ["straight", "adjective", "without a curve or bend.", "Draw a straight line with a ruler.", "Straight has aigh in the middle."],
+  ["arrangement", "noun", "a plan or the way things are organised.", "The seating arrangement changed for the concert.", "Arrangement is arrange + ment."],
+  ["audience", "noun", "the people watching or listening to a performance.", "The audience clapped after the song.", "Audience begins audi- and ends -ence."],
+  ["balance", "noun", "an even or steady position.", "The gymnast kept her balance on the beam.", "Balance ends -ance."],
+  ["captain", "noun", "the leader of a team, ship or group.", "The captain encouraged the whole team.", "Captain has ai in the second syllable."],
+  ["damage", "noun", "harm that makes something less useful or valuable.", "The storm caused damage to the fence.", "Damage ends -age."],
+  ["develop", "verb", "to grow, improve or become more advanced.", "Practice helps develop strong spelling habits.", "Develop has one l and ends -op."],
+  ["enormous", "adjective", "very large.", "An enormous wave crashed over the rocks.", "Enormous ends -ous."],
+  ["ordinary", "adjective", "usual or not special.", "It looked like an ordinary notebook.", "Ordinary ends -ary."]
 ]);
 
 const grade6 = make("grade6", [
@@ -115,7 +131,15 @@ const grade6 = make("grade6", [
   ["rhythm", "noun", "a repeated pattern of sound or movement.", "Clap the rhythm of the song.", "Rhythm has no standard vowel letters."],
   ["scientist", "noun", "a person who studies science.", "The scientist recorded the results carefully.", "Scientist begins science without the final e, then -ist.", "Science"],
   ["temperature", "noun", "a measure of how hot or cold something is.", "The temperature dropped overnight.", "Temperature ends -ature.", "Science"],
-  ["vegetable", "noun", "an edible plant or part of a plant.", "Carrot is a common vegetable.", "Vegetable has e after g and ends -table."]
+  ["vegetable", "noun", "an edible plant or part of a plant.", "Carrot is a common vegetable.", "Vegetable has e after g and ends -table."],
+  ["analyse", "verb", "to study something carefully to understand it.", "We analyse the poem one stanza at a time.", "Australian spelling uses -yse in analyse.", "Academic"],
+  ["anxious", "adjective", "worried or nervous about something.", "He felt anxious before the speech.", "Anxious has xious at the end."],
+  ["average", "noun", "a number found by sharing a total equally.", "Find the average score for the quiz.", "Average has er in the middle.", "Academic"],
+  ["benefit", "noun", "a helpful or good effect.", "One benefit of reading is a larger vocabulary.", "Benefit has one f and ends -fit."],
+  ["ceremony", "noun", "a formal event held for an important occasion.", "The award ceremony began after lunch.", "Ceremony ends -mony."],
+  ["generous", "adjective", "willing to give or share more than expected.", "The generous donation helped the library.", "Generous ends -ous."],
+  ["investigate", "verb", "to look into something carefully to find facts.", "The class will investigate how plants grow.", "Investigate begins in- and ends -gate.", "Science"],
+  ["noticeable", "adjective", "easy to see or notice.", "There was a noticeable improvement in her handwriting.", "Noticeable keeps the e from notice before -able."]
 ]);
 
 const year7 = make("year7", [
@@ -140,7 +164,7 @@ const year7 = make("year7", [
   ["opportunity", "noun", "a chance to do something.", "The excursion was an opportunity to learn outside class.", "Opportunity has double p."],
   ["persuade", "verb", "to convince someone to do or believe something.", "Use evidence to persuade your audience.", "Persuade begins per- and ends -suade."],
   ["questionnaire", "noun", "a written set of questions used to collect information.", "Students completed a questionnaire about transport.", "Questionnaire has double n near the end.", "Academic"],
-  ["recommend", "verb", "to suggest something as suitable or good.", "I recommend this novel for Year 7 readers.", "Recommend has one c and double m."],
+  ["recommend", "verb", "to suggest something as suitable or good.", "I recommend this novel for keen readers.", "Recommend has one c and double m."],
   ["relevant", "adjective", "closely connected to the topic.", "Include only relevant evidence in your paragraph.", "Relevant ends -vant, not -vent.", "Academic"],
   ["restaurant", "noun", "a place where meals are prepared and served.", "We ate at a small restaurant near the beach.", "Restaurant has au after rest."],
   ["schedule", "noun", "a plan that lists times for activities.", "Check the schedule before changing classrooms.", "Schedule begins sch- and ends -dule."],
@@ -148,7 +172,18 @@ const year7 = make("year7", [
   ["successful", "adjective", "achieving the result that was wanted.", "The fundraiser was successful.", "Successful has double c and double s."],
   ["surprise", "noun", "an unexpected event or feeling.", "The class party was a surprise.", "Surprise begins sur- and has no second r."],
   ["technique", "noun", "a particular way of doing something skilfully.", "She improved her swimming technique.", "Technique ends -nique.", "Academic"],
-  ["thorough", "adjective", "careful and complete.", "Do a thorough check before submitting your work.", "Thorough contains -ough twice in sound pattern, and ends -ough."]
+  ["thorough", "adjective", "careful and complete.", "Do a thorough check before submitting your work.", "Thorough contains -ough twice in sound pattern, and ends -ough."],
+  ["abundance", "noun", "a very large amount of something.", "The garden had an abundance of tomatoes.", "Abundance ends -ance."],
+  ["chaotic", "adjective", "very disorganised or confused.", "The first rehearsal was noisy and chaotic.", "Chaotic begins chao-."],
+  ["colleague", "noun", "a person you work or study with.", "My colleague shared useful notes after the meeting.", "Colleague ends -league."],
+  ["dilemma", "noun", "a difficult choice between options.", "She faced a dilemma about which topic to choose.", "Dilemma has double m."],
+  ["hygiene", "noun", "habits that keep people clean and healthy.", "Good hygiene helps stop germs spreading.", "Hygiene begins hy- and ends -giene.", "Medicine"],
+  ["leisure", "noun", "free time used for rest or enjoyment.", "He reads mystery novels in his leisure time.", "Leisure has the unusual ei pattern."],
+  ["metaphor", "noun", "a figure of speech that describes one thing as another.", "The phrase ocean of stars is a metaphor.", "Metaphor begins meta- and ends -phor.", "Literature"],
+  ["parliament", "noun", "the group of elected people who make laws.", "The students visited parliament during civics week.", "Parliament has a silent i after l.", "Civics"],
+  ["pronunciation", "noun", "the way a word is spoken.", "Check the pronunciation before the oral task.", "Pronunciation is pro-nun-ci-a-tion, not pronoun-ciation.", "Academic"],
+  ["sufficient", "adjective", "enough for a purpose.", "There was sufficient evidence to support the answer.", "Sufficient ends -cient."],
+  ["voluntary", "adjective", "done by choice rather than because you must.", "The clean-up was a voluntary activity.", "Voluntary ends -ary."]
 ]);
 
 export const JUNIOR_WORDS = [...grade4, ...grade5, ...grade6, ...year7];

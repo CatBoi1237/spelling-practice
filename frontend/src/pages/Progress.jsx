@@ -19,14 +19,14 @@ import { getHistory, getMissed, countMastered } from "@/lib/storage";
 import { computeSkill, DIFF_ORDER, levelTitle, rankDiff } from "@/lib/skill";
 
 const AXIS_LABELS = {
-  1: "G4",
-  2: "G5",
-  3: "G6",
-  4: "Y7",
-  5: "Easy",
-  6: "Med",
-  7: "Hard",
-  8: "Extr",
+  1: "Basic",
+  2: "V Easy",
+  3: "Easy",
+  4: "Normal",
+  5: "Med",
+  6: "Hard",
+  7: "V Hard",
+  8: "Elite",
 };
 
 const BAR_LEVELS = [...DIFF_ORDER, "mixed"];
@@ -86,12 +86,7 @@ export default function Progress() {
     return BAR_LEVELS
       .map((id) => ({
         id,
-        name: id === "grade4" ? "G4" :
-          id === "grade5" ? "G5" :
-          id === "grade6" ? "G6" :
-          id === "year7" ? "Y7" :
-          id === "medium" ? "Med" :
-          id === "extreme" ? "Extr" : id,
+        name: id === "mixed" ? "Mixed" : DIFFICULTY_META[id]?.shortLabel || id,
         difficulty: difficultyLabel(id),
         correct: byDifficulty[id] || 0,
       }))
@@ -108,7 +103,7 @@ export default function Progress() {
           <div>
             <h1 className="font-heading text-4xl font-black tracking-tight text-slate-100 sm:text-5xl">Your spelling journey</h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">
-              Track your climb from school-level vocabulary through competition spelling, plus the words that still need work.
+              Track your climb from Basic through Elite spelling, plus the words that still need work.
             </p>
           </div>
           {recentLevel && (
@@ -143,7 +138,7 @@ export default function Progress() {
           ) : <EmptyChart />}
         </ChartCard>
 
-        <ChartCard title="Level progression" subtitle="Grade 4 through national-bee vocabulary." testId="chart-progression">
+        <ChartCard title="Level progression" subtitle="Basic through Elite vocabulary." testId="chart-progression">
           {diffProgression.length ? (
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={diffProgression}>

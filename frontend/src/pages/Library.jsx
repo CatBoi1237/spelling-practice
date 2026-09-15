@@ -90,7 +90,7 @@ export default function Library() {
                 {WORDS.length.toLocaleString()} words to explore.
               </h1>
               <p className="mt-2 max-w-2xl text-base text-slate-400">
-                Browse from Grade 4 foundations through national-bee vocabulary, save favourites, then practise any word instantly.
+                Browse from Basic foundations through Elite spelling bee vocabulary, save favourites, then practise any word instantly.
               </p>
             </div>
             <button

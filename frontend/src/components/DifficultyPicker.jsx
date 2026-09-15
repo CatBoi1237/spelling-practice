@@ -1,8 +1,8 @@
 import { Wand2 } from "lucide-react";
 import {
-  BEE_LEVEL_IDS,
+  ADVANCED_LEVEL_IDS,
   DIFFICULTY_META,
-  SCHOOL_LEVEL_IDS,
+  FOUNDATION_LEVEL_IDS,
   WORDS_BY_DIFFICULTY,
 } from "@/data/words";
 import { cn } from "@/lib/utils";
@@ -43,8 +43,8 @@ function LevelCard({ id, selected, onSelect }) {
       <div className="mt-3 font-heading text-xl font-bold text-slate-100">
         {meta.label}
       </div>
-      <div className="mt-1 text-xs text-slate-500">
-        {count} word{count === 1 ? "" : "s"}
+      <div className="mt-1 text-xs leading-relaxed text-slate-500">
+        {meta.recommendation} · {count} word{count === 1 ? "" : "s"}
       </div>
     </button>
   );
@@ -56,15 +56,15 @@ export default function DifficultyPicker({ value, onChange, recommendedDifficult
       <div>
         <div className="mb-2 flex items-center justify-between gap-3">
           <div>
-            <div className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400/80">School levels</div>
-            <p className="mt-1 text-xs text-slate-500">Start with familiar vocabulary and move up one school level at a time.</p>
+            <div className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400/80">Foundation modes</div>
+            <p className="mt-1 text-xs text-slate-500">Start with friendlier spelling and step up when it feels too easy.</p>
           </div>
           <span className="hidden rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300 sm:inline-flex">
-            Grade 4 → Year 7
+            Basic → Normal
           </span>
         </div>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {SCHOOL_LEVEL_IDS.map((id) => (
+          {FOUNDATION_LEVEL_IDS.map((id) => (
             <LevelCard key={id} id={id} selected={value === id} onSelect={onChange} />
           ))}
         </div>
@@ -72,11 +72,11 @@ export default function DifficultyPicker({ value, onChange, recommendedDifficult
 
       <div>
         <div className="mb-2">
-          <div className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-400/80">Spelling Bee levels</div>
-          <p className="mt-1 text-xs text-slate-500">Harder vocabulary for secondary school and competition practice.</p>
+          <div className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-400/80">Challenge modes</div>
+          <p className="mt-1 text-xs text-slate-500">More advanced vocabulary for confident spellers and competition practice.</p>
         </div>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-          {BEE_LEVEL_IDS.map((id) => (
+          {ADVANCED_LEVEL_IDS.map((id) => (
             <LevelCard key={id} id={id} selected={value === id} onSelect={onChange} />
           ))}
           <button

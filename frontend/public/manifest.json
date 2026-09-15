@@ -1,7 +1,7 @@
 {
   "short_name": "SpellBee",
   "name": "SpellBee — Spelling Practice",
-  "description": "Listen, spell and master words with school levels, daily challenges, Race Mode and Classroom Mode.",
+  "description": "Listen, spell and master words with difficulty levels, daily challenges, Race Mode and Classroom Mode.",
   "id": "/",
   "start_url": "/",
   "scope": "/",

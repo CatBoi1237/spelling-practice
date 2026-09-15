@@ -20,10 +20,9 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { api, apiError } from "@/lib/api";
 import { getCustomWordLists } from "@/lib/customWordLists";
-import { DIFFICULTY_META, WORDS_BY_DIFFICULTY } from "@/data/words";
+import { DIFFICULTY_LEVEL_IDS, DIFFICULTY_META, WORDS_BY_DIFFICULTY } from "@/data/words";
 import AssignmentQrButton from "@/components/AssignmentQrButton";
 
-const SCHOOL_LEVELS = ["grade4", "grade5", "grade6", "year7"];
 const COUNTS = [5, 10, 15, 25];
 const ATTEMPTS = [1, 2, 3, 5];
 
@@ -201,7 +200,7 @@ export default function TeacherAssignments() {
           <div>
             <div className="text-[10px] font-black uppercase tracking-[0.24em] text-indigo-300">Teacher · Assignments</div>
             <h1 className="mt-2 font-heading text-4xl font-black text-slate-50 sm:text-5xl">Send spelling practice home.</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">Choose a school level or one of your word lists, share a link, QR code or six-character code, then see completion, accuracy, missed words and response time.</p>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">Choose a difficulty mode or one of your word lists, share a link, QR code or six-character code, then see completion, accuracy, missed words and response time.</p>
           </div>
           <button onClick={load} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-bold text-slate-300 hover:text-white disabled:opacity-50">
             <RefreshCcw className={loading ? "h-4 w-4 animate-spin" : "h-4 w-4"} /> Refresh
@@ -225,7 +224,7 @@ export default function TeacherAssignments() {
 
           <label className="mt-4 block text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Word source
             <select value={source} onChange={(event) => setSource(event.target.value)} className="mt-2 w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-100 outline-none">
-              {SCHOOL_LEVELS.map((level) => <option key={level} value={level}>{DIFFICULTY_META[level]?.label || level}</option>)}
+              {DIFFICULTY_LEVEL_IDS.map((level) => <option key={level} value={level}>{DIFFICULTY_META[level]?.label || level}</option>)}
               {customLists.map((list) => <option key={list.id} value={`list:${list.id}`}>{list.name} · {list.words.length} words</option>)}
             </select>
           </label>

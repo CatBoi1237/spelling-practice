@@ -12,7 +12,7 @@ KEY = os.environ["EMERGENT_LLM_KEY"]
 
 CATEGORIES = ["Science", "Literature", "Geography", "Animals", "Technology", "Medicine", "History", "Everyday English", "Academic", "Competition"]
 DIFFS = {
-    "easy": "Year 7-8 (ages 12-13): common but tricky everyday words, 5-10 letters",
+    "easy": "Medium mode (recommended Years 8-9): common but tricky everyday words, 5-10 letters",
     "medium": "Year 9-10 (ages 14-15): academic vocabulary, 7-12 letters, tricky patterns",
     "hard": "Year 11-12 (ages 16-18): advanced academic/literary vocabulary, often 9-14 letters",
     "extreme": "National spelling bee champion level: rare, foreign-derived, very hard-to-spell words",

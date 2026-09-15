@@ -115,7 +115,7 @@ export default function PracticeHub() {
             Choose your level. Then spell.
           </h1>
           <p className="mt-3 max-w-2xl text-base text-slate-400">
-            SpellBee now starts as early as Grade 4 and scales all the way to national-bee vocabulary. Pick the level that feels right, then choose a mode.
+            SpellBee now runs from Basic through Elite, with year-range recommendations on each level. Pick the difficulty that feels right, then choose a mode.
           </p>
           <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-200">
             Selected: {selectedLabel}

@@ -6,7 +6,7 @@ import { WORDS, DIFFICULTY_META } from "@/data/words";
 
 const PAGES = [
   ["Home", "/", "Dashboard and recommendations"],
-  ["Practice", "/practice", "Practice modes and school levels"],
+  ["Practice", "/practice", "Practice modes and difficulty levels"],
   ["Daily Challenge", "/daily", "Today's five-word challenge"],
   ["Multiplayer", "/multiplayer", "Race and Classroom Mode"],
   ["Join Game", "/join", "Enter a Race or Classroom code"],

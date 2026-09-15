@@ -9,11 +9,11 @@ import { playTone } from "@/lib/speech";
 import { Eyebrow, PrimaryButton, GhostButton } from "@/components/ui-bits";
 import { cn } from "@/lib/utils";
 
-const SCHOOL_PATHS = [
+const FOUNDATION_PATHS = [
   { id: "grade4", emoji: "🌱", message: "Build strong spelling foundations with everyday words and core patterns." },
   { id: "grade5", emoji: "🌿", message: "Grow vocabulary, suffix skills and common tricky spellings." },
   { id: "grade6", emoji: "🌳", message: "Strengthen longer words, pattern recognition and accuracy." },
-  { id: "year7", emoji: "🚀", message: "Bridge into secondary-school vocabulary and Spelling Bee training." },
+  { id: "year7", emoji: "🚀", message: "Bridge into confident secondary vocabulary and spelling bee training." },
 ];
 
 export default function Learn() {
@@ -22,7 +22,7 @@ export default function Learn() {
   const navigate = useNavigate();
   const wordStats = useMemo(() => getWordStats(), []);
 
-  const pathStats = useMemo(() => SCHOOL_PATHS.map((path) => {
+  const pathStats = useMemo(() => FOUNDATION_PATHS.map((path) => {
     const words = WORDS.filter((word) => word.difficulty === path.id);
     const mastered = words.filter((word) => isMastered(wordStats[word.word])).length;
     const attempted = words.filter((word) => (wordStats[word.word]?.attempts || 0) > 0).length;
@@ -38,10 +38,10 @@ export default function Learn() {
           <div>
             <Eyebrow>Learn</Eyebrow>
             <h1 className="mt-2 font-heading text-4xl font-black tracking-tight text-slate-50 sm:text-5xl">Build skills, not just scores.</h1>
-            <p className="mt-2 max-w-2xl text-base text-slate-400">Follow your school-level path or learn a spelling rule, take a mini quiz, then practise it immediately.</p>
+            <p className="mt-2 max-w-2xl text-base text-slate-400">Follow a recommended difficulty path or learn a spelling rule, take a mini quiz, then practise it immediately.</p>
           </div>
           <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-4 py-2 text-xs font-bold text-emerald-200">
-            <GraduationCap className="h-4 w-4" /> Grade 4 → Year 7
+            <GraduationCap className="h-4 w-4" /> Basic → Normal
           </span>
         </div>
       </header>
@@ -49,9 +49,9 @@ export default function Learn() {
       <section>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <Eyebrow>School paths</Eyebrow>
-            <h2 className="mt-1 font-heading text-3xl font-black text-slate-50">Learn at your year level</h2>
-            <p className="mt-2 max-w-2xl text-sm text-slate-400">Each path uses the curated words for that level. Mastery means getting a word correct three times in a row.</p>
+            <Eyebrow>Foundation paths</Eyebrow>
+            <h2 className="mt-1 font-heading text-3xl font-black text-slate-50">Learn at the right difficulty</h2>
+            <p className="mt-2 max-w-2xl text-sm text-slate-400">Each path shows a recommended year range and uses curated words for that difficulty. Mastery means getting a word correct three times in a row.</p>
           </div>
           <button
             type="button"
@@ -75,6 +75,7 @@ export default function Learn() {
                   </span>
                 </div>
                 <h3 className="mt-4 font-heading text-2xl font-black text-slate-100">{DIFFICULTY_META[path.id]?.label || path.id}</h3>
+                <div className="mt-1 text-xs font-semibold text-emerald-300">{DIFFICULTY_META[path.id]?.recommendation}</div>
                 <p className="mt-2 min-h-[60px] text-sm leading-relaxed text-slate-400">{path.message}</p>
 
                 <div className="mt-5">
@@ -95,7 +96,7 @@ export default function Learn() {
                   onClick={() => navigate(`/practice?mode=ten&difficulty=${path.id}`)}
                   className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-emerald-400"
                 >
-                  <Play className="h-4 w-4" /> Practise {DIFFICULTY_META[path.id]?.label}
+                  <Play className="h-4 w-4" /> Practice {DIFFICULTY_META[path.id]?.label}
                 </button>
               </article>
             );

@@ -14,7 +14,7 @@ import {
   Trophy,
   Users,
 } from "lucide-react";
-import { DIFFICULTY_META, PATTERN_META, SCHOOL_LEVEL_IDS } from "@/data/words";
+import { DIFFICULTY_META, FOUNDATION_LEVEL_IDS, PATTERN_META } from "@/data/words";
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
 import { getMissed, getHistory, countMastered, getDailyLocal } from "@/lib/storage";
@@ -84,8 +84,8 @@ export default function Dashboard() {
               </h1>
               <p className="mt-4 max-w-md text-base leading-relaxed text-slate-400">
                 {firstTime
-                  ? "Start at your school level, hear each word clearly, and learn from every miss."
-                  : "Your next round is tuned to your level — or jump into any school year below."}
+                  ? "Start with a difficulty that feels comfortable, hear each word clearly, and learn from every miss."
+                  : "Your next round is tuned to your level, or you can jump into any difficulty below."}
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <PrimaryButton data-testid="start-practice-button" onClick={() => go("classic")}>
@@ -139,11 +139,11 @@ export default function Dashboard() {
       <section>
         <SectionHeader
           eyebrow="Start at your level"
-          title="School-year practice"
+          title="Foundation difficulty modes"
           action={<Link to="/practice" className="text-sm font-semibold text-amber-400 hover:text-amber-300">All levels →</Link>}
         />
         <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {SCHOOL_LEVEL_IDS.map((id) => {
+          {FOUNDATION_LEVEL_IDS.map((id) => {
             const meta = DIFFICULTY_META[id];
             return (
               <button
@@ -162,7 +162,7 @@ export default function Dashboard() {
                   <ArrowRight className="h-4 w-4 text-slate-600 transition-transform group-hover:translate-x-1 group-hover:text-slate-200" />
                 </div>
                 <div className="mt-4 font-heading text-2xl font-black text-slate-50">{meta.label}</div>
-                <div className="mt-1 text-xs text-slate-500">{meta.subtitle} vocabulary</div>
+                <div className="mt-1 text-xs text-slate-500">{meta.recommendation}</div>
               </button>
             );
           })}
@@ -241,7 +241,7 @@ export default function Dashboard() {
       <section className="grid gap-4 md:grid-cols-3">
         <MiniLink testId="go-multiplayer-button" icon={Users} title="Multiplayer & Classroom" body="Race friends or host a teacher-led spelling game." to="/multiplayer" />
         <MiniLink testId="go-word-lists-button" icon={ListChecks} title="My Word Lists" body="Build your own 5, 10, 15 or 25-word spelling lists." to="/word-lists" />
-        <MiniLink testId="go-progress-button" icon={Trophy} title="Progress & charts" body="Accuracy, school-level progression and session history." to="/progress" />
+        <MiniLink testId="go-progress-button" icon={Trophy} title="Progress & charts" body="Accuracy, difficulty progression and session history." to="/progress" />
       </section>
     </div>
   );

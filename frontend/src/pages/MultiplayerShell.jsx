@@ -9,22 +9,21 @@ import { api, apiError } from "@/lib/api";
 import { getPlayerId } from "@/lib/identity";
 import { pickSeededWords } from "@/lib/seeded";
 import { assignCustomListToGame, buildCustomRacePath } from "@/lib/customWordLists";
-import { DIFFICULTY_META } from "@/data/words";
+import { DIFFICULTY_META, FOUNDATION_LEVEL_IDS } from "@/data/words";
 import { cn } from "@/lib/utils";
 
-const SCHOOL_LEVELS = ["grade4", "grade5", "grade6", "year7"];
 const COUNTS = [5, 10, 15, 25];
 
-function makeSchoolList(seed, count, level) {
+function makeFoundationList(seed, count, level) {
   const words = pickSeededWords(seed, count, level).map((item) => item.word);
   return {
     id: null,
-    name: `${DIFFICULTY_META[level]?.label || level} School List`,
+    name: `${DIFFICULTY_META[level]?.label || level} Word List`,
     words,
   };
 }
 
-function SchoolGameLauncher() {
+function FoundationGameLauncher() {
   const navigate = useNavigate();
   const { user, isTeacher, playerName } = useAuth();
   const playerId = user?.id || getPlayerId();
@@ -41,11 +40,11 @@ function SchoolGameLauncher() {
         word_count: count,
         difficulty: "mixed",
       });
-      const list = makeSchoolList(data.seed, count, level);
+      const list = makeFoundationList(data.seed, count, level);
       assignCustomListToGame("room", data.code, list);
       navigate(buildCustomRacePath(data.code, list));
     } catch (error) {
-      toast.error(apiError(error, "Could not create the school-level race."));
+      toast.error(apiError(error, "Could not create the difficulty race."));
     } finally {
       setBusy(null);
     }
@@ -66,11 +65,11 @@ function SchoolGameLauncher() {
         difficulty: "mixed",
         time_limit_sec: 20,
       });
-      const list = makeSchoolList(data.seed, count, level);
+      const list = makeFoundationList(data.seed, count, level);
       assignCustomListToGame("classroom", data.code, list);
       navigate(`/classroom/${data.code}`);
     } catch (error) {
-      toast.error(apiError(error, "Could not create the school-level classroom."));
+      toast.error(apiError(error, "Could not create the difficulty classroom."));
     } finally {
       setBusy(null);
     }
@@ -81,23 +80,23 @@ function SchoolGameLauncher() {
       <div className="flex flex-wrap items-start justify-between gap-5">
         <div>
           <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-cyan-200">
-            <GraduationCap className="h-3.5 w-3.5" /> School-level games
+            <GraduationCap className="h-3.5 w-3.5" /> Foundation games
           </span>
-          <h2 className="mt-3 font-heading text-3xl font-black text-slate-50">Grade 4 → Year 7 multiplayer</h2>
+          <h2 className="mt-3 font-heading text-3xl font-black text-slate-50">Basic → Normal multiplayer</h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">
-            Host a Race or Classroom game using the same easier school-level word banks available in Practice.
+            Host a Race or Classroom game using the same easier difficulty word banks available in Practice.
           </p>
         </div>
         <div className="rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-xs text-slate-400">
-          Classroom uses normal code/QR joining.<br />School-level Race players should use the host invite link.
+          Classroom uses normal code/QR joining.<br />Race players should use the host invite link.
         </div>
       </div>
 
       <div className="mt-7 grid gap-5 lg:grid-cols-[1fr_0.7fr]">
         <div>
-          <div className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">School level</div>
+          <div className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Difficulty</div>
           <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {SCHOOL_LEVELS.map((id) => (
+            {FOUNDATION_LEVEL_IDS.map((id) => (
               <button
                 key={id}
                 type="button"
@@ -164,7 +163,7 @@ function SchoolGameLauncher() {
 export default function MultiplayerShell() {
   return (
     <>
-      <SchoolGameLauncher />
+      <FoundationGameLauncher />
       <Multiplayer />
     </>
   );

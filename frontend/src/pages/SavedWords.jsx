@@ -58,7 +58,16 @@ export default function SavedWords() {
         <>
           <div className="flex items-center justify-between gap-4">
             <p className="text-sm font-semibold text-slate-400">{rows.length} saved word{rows.length === 1 ? "" : "s"}</p>
-            <Link to="/library" className="text-sm font-bold text-amber-400 hover:text-amber-300">Add more →</Link>
+            <div className="flex flex-wrap items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => navigate("/practice?mode=saved&difficulty=mixed")}
+                className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-sm font-bold text-slate-950 hover:bg-amber-400"
+              >
+                <Play className="h-4 w-4" /> Practise saved
+              </button>
+              <Link to="/library" className="text-sm font-bold text-amber-400 hover:text-amber-300">Add more →</Link>
+            </div>
           </div>
 
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

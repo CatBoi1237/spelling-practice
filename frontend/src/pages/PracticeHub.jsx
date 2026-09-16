@@ -14,10 +14,16 @@ import {
   Gavel,
   ArrowRight,
   Brain,
+  Bookmark,
+  CalendarDays,
+  Globe2,
+  HeartHandshake,
+  Tags,
 } from "lucide-react";
-import { DIFFICULTY_META, MODES, PATTERN_META, WORDS } from "@/data/words";
+import { CATEGORIES, DIFFICULTY_META, MODES, PATTERN_META, WORDS } from "@/data/words";
 import { useApp } from "@/context/AppContext";
 import { getHistory, getMissed } from "@/lib/storage";
+import { getSavedWords } from "@/lib/savedWords";
 import { recommendDifficulty, weakPattern } from "@/lib/skill";
 import { Eyebrow, SectionHeader, Pill } from "@/components/ui-bits";
 import DifficultyPicker from "@/components/DifficultyPicker";
@@ -32,10 +38,15 @@ const ICONS = {
   test: Timer,
   smart: Brain,
   mistakes: Repeat,
+  saved: Bookmark,
   pattern: Shapes,
+  category: Tags,
+  origin: Globe2,
+  confidence: HeartHandshake,
   survival: Skull,
   speed: Gauge,
   judge: Gavel,
+  dailyMix: CalendarDays,
 };
 
 const GROUPS = [
@@ -55,6 +66,8 @@ export default function PracticeHub() {
   const [testSeconds, setTestSeconds] = useState(settings.testModeSeconds || 20);
   const [testDef, setTestDef] = useState(!!settings.testShowDefinition);
   const [pattern, setPattern] = useState(null);
+  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [origin, setOrigin] = useState("Latin");
 
   const history = useMemo(() => getHistory(), []);
   const rec = useMemo(
@@ -62,6 +75,7 @@ export default function PracticeHub() {
     [history, settings.preferredDifficulty]
   );
   const missedCount = useMemo(() => getMissed().length, []);
+  const savedCount = useMemo(() => getSavedWords().length, []);
   const weak = useMemo(() => weakPattern(), []);
   const patterns = useMemo(() => {
     const counts = {};
@@ -70,6 +84,15 @@ export default function PracticeHub() {
     );
     return Object.entries(counts)
       .filter(([, n]) => n >= 3)
+      .sort((a, b) => b[1] - a[1]);
+  }, []);
+  const origins = useMemo(() => {
+    const counts = {};
+    WORDS.forEach((w) => {
+      if (w.origin) counts[w.origin] = (counts[w.origin] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .filter(([, n]) => n >= 5)
       .sort((a, b) => b[1] - a[1]);
   }, []);
 
@@ -95,6 +118,14 @@ export default function PracticeHub() {
       const p = pattern || weak?.pattern || patterns[0]?.[0];
       if (!p) return;
       q.set("pattern", p);
+    }
+
+    if (mode.id === "category") {
+      q.set("category", category || CATEGORIES[0]);
+    }
+
+    if (mode.id === "origin") {
+      q.set("origin", origin || origins[0]?.[0] || "Latin");
     }
 
     navigate(`/practice?${q.toString()}`);
@@ -140,7 +171,9 @@ export default function PracticeHub() {
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {MODES.filter((mode) => mode.group === group.id).map((mode) => {
               const Icon = ICONS[mode.id] || Layers;
-              const disabled = mode.id === "mistakes" && missedCount === 0;
+              const disabled =
+                (mode.id === "mistakes" && missedCount === 0) ||
+                (mode.id === "saved" && savedCount === 0);
 
               return (
                 <div
@@ -180,6 +213,13 @@ export default function PracticeHub() {
                           {missedCount
                             ? `${missedCount} word${missedCount === 1 ? "" : "s"} to master`
                             : "No missed words yet"}
+                        </p>
+                      )}
+                      {mode.id === "saved" && (
+                        <p className="mt-1 text-xs text-amber-300">
+                          {savedCount
+                            ? `${savedCount} saved word${savedCount === 1 ? "" : "s"}`
+                            : "Save words from the library first"}
                         </p>
                       )}
                     </div>
@@ -241,6 +281,27 @@ export default function PracticeHub() {
                     </div>
                   )}
 
+                  {mode.id === "category" && (
+                    <SelectBox
+                      testId="category-select"
+                      value={category}
+                      onChange={setCategory}
+                      options={CATEGORIES.map((name) => [
+                        name,
+                        `${name} · ${WORDS.filter((word) => word.category === name).length} words`,
+                      ])}
+                    />
+                  )}
+
+                  {mode.id === "origin" && (
+                    <SelectBox
+                      testId="origin-select"
+                      value={origin}
+                      onChange={setOrigin}
+                      options={origins.map(([name, count]) => [name, `${name} · ${count} words`])}
+                    />
+                  )}
+
                   <button
                     data-testid={`mode-${mode.id}-card`}
                     onClick={() => start(mode)}
@@ -264,6 +325,25 @@ export default function PracticeHub() {
       <p className="rounded-2xl border border-slate-800 bg-slate-900/30 p-4 text-xs text-slate-500">
         <Pill className="mr-2">Adaptive tip</Pill> {rec.reason}
       </p>
+    </div>
+  );
+}
+
+function SelectBox({ testId, value, onChange, options }) {
+  return (
+    <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
+      <select
+        data-testid={testId}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 outline-none"
+      >
+        {options.map(([id, label]) => (
+          <option key={id} value={id}>
+            {label}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

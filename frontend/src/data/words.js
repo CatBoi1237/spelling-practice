@@ -91,8 +91,13 @@ export const MODES = [
   { id: "test", label: "Test Mode", description: "Word spoken once. No replays, no hints. Timed.", limit: 20, timer: 20, singlePlay: true, noHints: true, group: "core" },
   { id: "smart", label: "Smart Practice", description: "A personalised mix of mistakes, weak patterns, your level and challenge words.", limit: 15, source: "smart", group: "learn" },
   { id: "mistakes", label: "Mistake Mode", description: "Only the words you've missed before.", limit: 10, source: "missed", group: "learn" },
+  { id: "saved", label: "Saved Words", description: "Practise the words you've bookmarked in your personal bank.", limit: 15, source: "saved", group: "learn" },
   { id: "pattern", label: "Pattern Mode", description: "Drill one spelling pattern at a time.", limit: 10, source: "pattern", group: "learn" },
+  { id: "category", label: "Category Drill", description: "Focus on one topic, like Science, Literature or Geography.", limit: 12, source: "category", group: "learn" },
+  { id: "origin", label: "Origin Drill", description: "Practise words from the same language family.", limit: 12, source: "origin", group: "learn" },
+  { id: "confidence", label: "Confidence Builder", description: "A steadier round one level easier than your current pick.", limit: 15, source: "confidence", group: "learn" },
   { id: "survival", label: "Survival", description: "One mistake ends the run.", limit: null, lives: 1, group: "arena" },
   { id: "speed", label: "Speed Mode", description: "10s per word. Fast answers earn bonus points.", limit: 15, timer: 10, speedBonus: true, group: "arena" },
   { id: "judge", label: "Judge Mode", description: "A real bee: ask the judge for definition, sentence, origin.", limit: 10, judge: true, group: "arena" },
+  { id: "dailyMix", label: "Daily Mix", description: "A balanced 12-word set that changes each day.", limit: 12, source: "daily-mix", group: "arena" },
 ];

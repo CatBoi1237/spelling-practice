@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Bookmark, BookOpen, Play, Search, Volume2 } from "lucide-react";
-import { WORDS, DIFFICULTY_META, CATEGORIES, PATTERN_META } from "@/data/words";
+import { WORDS, DIFFICULTY_META, CATEGORIES, PATTERN_META, TOPIC_PACKS } from "@/data/words";
 import { useApp } from "@/context/AppContext";
 import { getWordStats, isMastered } from "@/lib/storage";
 import { getSavedWords, toggleSavedWord } from "@/lib/savedWords";
@@ -24,6 +24,9 @@ const DIFF_STYLE = {
 export default function Library() {
   const { settings } = useApp();
   const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const topic = TOPIC_PACKS.find((pack) => pack.id === params.get("topic"));
+  const topicWords = useMemo(() => topic ? new Set(topic.words.map((word) => word.word)) : null, [topic]);
   const [q, setQ] = useState("");
   const [diff, setDiff] = useState("all");
   const [cat, setCat] = useState("all");
@@ -50,6 +53,7 @@ export default function Library() {
   const results = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return WORDS.filter((word) => {
+      if (topicWords && !topicWords.has(word.word)) return false;
       if (diff !== "all" && word.difficulty !== diff) return false;
       if (cat !== "all" && word.category !== cat) return false;
       if (pattern !== "all" && !(word.patterns || []).includes(pattern)) return false;
@@ -60,13 +64,14 @@ export default function Library() {
       ) return false;
       return true;
     }).sort((a, b) => a.word.localeCompare(b.word));
-  }, [q, diff, cat, pattern]);
+  }, [q, diff, cat, pattern, topicWords]);
 
-  const activeFilters = [diff !== "all", cat !== "all", pattern !== "all", Boolean(q.trim())]
+  const activeFilters = [diff !== "all", cat !== "all", pattern !== "all", Boolean(q.trim()), Boolean(topic)]
     .filter(Boolean)
     .length;
 
   const clearFilters = () => {
+    setParams({});
     setQ("");
     setDiff("all");
     setCat("all");
@@ -105,6 +110,14 @@ export default function Library() {
       </header>
 
       <section className="rounded-3xl border border-slate-800 bg-slate-900/35 p-4 sm:p-5">
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <label htmlFor="library-topic" className="text-sm font-semibold text-slate-300">Topic pack</label>
+          <select id="library-topic" value={topic?.id || ""} onChange={(event) => { setParams(event.target.value ? { topic: event.target.value } : {}); setLimit(PAGE); }} className="max-w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-3 text-sm text-slate-200">
+            <option value="">All words</option>
+            {TOPIC_PACKS.map((pack) => <option key={pack.id} value={pack.id}>{pack.title}</option>)}
+          </select>
+          {topic && <button type="button" onClick={() => navigate(`/practice?mode=topic&topic=${topic.id}&difficulty=mixed`)} className="min-h-[44px] rounded-xl bg-amber-500 px-4 py-2 text-sm font-bold text-slate-950 hover:bg-amber-400">Practise full pack · {topic.words.length} words</button>}
+        </div>
         <div className="grid gap-3 md:grid-cols-4">
           <label className="relative md:col-span-2">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />

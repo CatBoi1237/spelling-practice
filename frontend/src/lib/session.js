@@ -1,5 +1,5 @@
 // Builds a practice queue for a mode, avoiding recently seen words.
-import { WORDS, WORDS_BY_DIFFICULTY, WORD_MAP, MODES } from "@/data/words";
+import { WORDS, WORDS_BY_DIFFICULTY, WORD_MAP, MODES, TOPIC_PACKS } from "@/data/words";
 import { pickDailyWords } from "@/lib/seeded";
 import { getMissed, getSeen, markSeen } from "@/lib/storage";
 import { getSavedWords } from "@/lib/savedWords";
@@ -114,7 +114,7 @@ export function resolveMode(mode, settings, params) {
 }
 
 // Returns { queue, source } — source describes where the words came from (for UI notices).
-export function buildQueue({ mode, difficulty, pattern, category, origin, word }) {
+export function buildQueue({ mode, difficulty, pattern, category, origin, topic, word }) {
   let pool;
   let notice = null;
 
@@ -126,7 +126,11 @@ export function buildQueue({ mode, difficulty, pattern, category, origin, word }
     return smartQueue(difficulty, mode.limit || 15);
   }
 
-  if (mode.source === "saved") {
+  if (mode.source === "topic") {
+    const selected = TOPIC_PACKS.find((pack) => pack.id === topic) || TOPIC_PACKS[0];
+    pool = wordsFromNames(selected.words.map((item) => item.word));
+    notice = `${selected.title}: a mix of levels from this topic pack.`;
+  } else if (mode.source === "saved") {
     const saved = wordsFromNames(getSavedWords());
     if (saved.length === 0) {
       notice = "No saved words yet - here's a normal session instead.";

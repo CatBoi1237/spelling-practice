@@ -3,6 +3,8 @@
 // categories and spelling patterns. Expanded entries are generated once and shipped statically.
 import WORD_DATA from "./words.json";
 import { JUNIOR_WORDS } from "./juniorWords";
+import { TOPIC_WORDS } from "./topicPacks";
+export { TOPIC_PACKS } from "./topicPacks";
 
 const ORIGINAL_BY_WORD = new Map(
   WORD_DATA.map((word) => [word.word.toLowerCase(), word])
@@ -16,9 +18,14 @@ const enrichedJunior = JUNIOR_WORDS.map((word) => ({
   ...word,
 }));
 
-export const WORDS = [
+const existingWords = [
   ...enrichedJunior,
   ...WORD_DATA.filter((word) => !juniorKeys.has(word.word.toLowerCase())),
+];
+const existingKeys = new Set(existingWords.map((word) => word.word.toLowerCase()));
+export const WORDS = [
+  ...existingWords,
+  ...TOPIC_WORDS.filter((word) => !existingKeys.has(word.word.toLowerCase())),
 ];
 
 export const FOUNDATION_LEVEL_IDS = ["grade4", "grade5", "grade6", "year7"];
@@ -100,4 +107,5 @@ export const MODES = [
   { id: "speed", label: "Speed Mode", description: "10s per word. Fast answers earn bonus points.", limit: 15, timer: 10, speedBonus: true, group: "arena" },
   { id: "judge", label: "Judge Mode", description: "A real bee: ask the judge for definition, sentence, origin.", limit: 10, judge: true, group: "arena" },
   { id: "dailyMix", label: "Daily Mix", description: "A balanced 12-word set that changes each day.", limit: 12, source: "daily-mix", group: "arena" },
+  { id: "topic", label: "Topic Pack", description: "Practise a curated set of words around one theme.", limit: 12, source: "topic", group: "packs" },
 ];

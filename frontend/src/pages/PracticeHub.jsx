@@ -20,7 +20,7 @@ import {
   HeartHandshake,
   Tags,
 } from "lucide-react";
-import { CATEGORIES, DIFFICULTY_META, MODES, PATTERN_META, WORDS } from "@/data/words";
+import { CATEGORIES, DIFFICULTY_META, MODES, PATTERN_META, WORDS, TOPIC_PACKS } from "@/data/words";
 import { useApp } from "@/context/AppContext";
 import { getHistory, getMissed } from "@/lib/storage";
 import { getSavedWords } from "@/lib/savedWords";
@@ -321,6 +321,24 @@ export default function PracticeHub() {
           </div>
         </section>
       ))}
+
+      <section aria-label="Topic packs">
+        <SectionHeader eyebrow="Explore a theme" title="Topic packs" />
+        <p className="mt-2 text-sm text-slate-400">Each pack mixes levels, from familiar words to a few stretching challenges. Packs use their own word selection.</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {TOPIC_PACKS.map((pack) => (
+            <article key={pack.id} className="flex flex-col rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
+              <h3 className="font-heading text-lg font-bold text-slate-100">{pack.title}</h3>
+              <p className="mt-2 text-sm text-slate-400">{pack.description}</p>
+              <p className="mt-3 text-xs text-amber-300">{pack.words.length} words · Mixed levels</p>
+              <div className="mt-auto flex flex-wrap gap-3 pt-4">
+                <button type="button" data-testid={`topic-${pack.id}`} onClick={() => navigate(`/practice?mode=topic&topic=${pack.id}&difficulty=mixed`)} className="min-h-[44px] rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-400">Practise {pack.title}</button>
+                <button type="button" onClick={() => navigate(`/library?topic=${pack.id}`)} className="min-h-[44px] text-sm font-semibold text-amber-300 hover:text-amber-200">Browse words</button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
 
       <p className="rounded-2xl border border-slate-800 bg-slate-900/30 p-4 text-xs text-slate-500">
         <Pill className="mr-2">Adaptive tip</Pill> {rec.reason}

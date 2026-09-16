@@ -36,6 +36,8 @@ function Session() {
     return recommendDifficulty(getHistory(), settings.preferredDifficulty || "medium").difficulty;
   }, [requested, settings.preferredDifficulty]);
   const pattern = params.get("pattern");
+  const category = params.get("category");
+  const origin = params.get("origin");
   const singleWord = params.get("word");
   const legacyList = params.get("list"); // backwards compat: list=missed
 
@@ -61,7 +63,7 @@ function Session() {
 
   useEffect(() => {
     const effectiveMode = legacyList === "missed" ? { ...mode, source: "missed" } : mode;
-    const { queue: q, notice: n } = buildQueue({ mode: effectiveMode, difficulty, pattern, word: singleWord });
+    const { queue: q, notice: n } = buildQueue({ mode: effectiveMode, difficulty, pattern, category, origin, word: singleWord });
     setQueue(q);
     setNotice(n);
     if (n) toast(n);

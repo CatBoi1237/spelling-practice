@@ -54,6 +54,9 @@ const grade4 = make("grade4", [
   ["autumn", "noun", "the season between summer and winter.", "Leaves often change colour in autumn.", "Autumn has a silent n at the end."],
   ["bottle", "noun", "a container with a narrow top for holding liquid.", "She filled her bottle before the hike.", "Bottle has double t and ends -le."],
   ["build", "verb", "to make something by joining parts together.", "We will build a model bridge in class.", "Build starts bui, not bil."],
+  ["busy", "adjective", "having a lot to do.", "The library was busy after lunch.", "Busy sounds like bizzy but starts bus-."],
+  ["heart", "noun", "the organ that pumps blood around the body.", "Exercise helps keep your heart strong.", "Heart has ear in the middle.", "Medicine"],
+  ["learn", "verb", "to gain knowledge or skill.", "We learn a new spelling rule each week.", "Learn has ear in the middle."],
   ["decimal", "noun", "a number written with a point to show parts of a whole.", "Write the answer as a decimal.", "Decimal begins deci- and ends -mal.", "Academic"],
   ["famous", "adjective", "known by many people.", "The famous author visited our library.", "Famous ends -ous."],
   ["imagine", "verb", "to form a picture or idea in your mind.", "Imagine a city under the sea.", "Imagine begins im- and ends -gine."],
@@ -97,8 +100,11 @@ const grade5 = make("grade5", [
   ["captain", "noun", "the leader of a team, ship or group.", "The captain encouraged the whole team.", "Captain has ai in the second syllable."],
   ["damage", "noun", "harm that makes something less useful or valuable.", "The storm caused damage to the fence.", "Damage ends -age."],
   ["develop", "verb", "to grow, improve or become more advanced.", "Practice helps develop strong spelling habits.", "Develop has one l and ends -op."],
+  ["discuss", "verb", "to talk about something with others.", "The group will discuss the chapter.", "Discuss has double s at the end."],
   ["enormous", "adjective", "very large.", "An enormous wave crashed over the rocks.", "Enormous ends -ous."],
-  ["ordinary", "adjective", "usual or not special.", "It looked like an ordinary notebook.", "Ordinary ends -ary."]
+  ["ordinary", "adjective", "usual or not special.", "It looked like an ordinary notebook.", "Ordinary ends -ary."],
+  ["promise", "noun", "a statement that you will do something.", "She kept her promise to help.", "Promise ends -ise."],
+  ["purpose", "noun", "the reason something is done.", "The purpose of the poster is to inform.", "Purpose begins pur- and ends -pose."]
 ]);
 
 const grade6 = make("grade6", [
@@ -136,10 +142,14 @@ const grade6 = make("grade6", [
   ["anxious", "adjective", "worried or nervous about something.", "He felt anxious before the speech.", "Anxious has xious at the end."],
   ["average", "noun", "a number found by sharing a total equally.", "Find the average score for the quiz.", "Average has er in the middle.", "Academic"],
   ["benefit", "noun", "a helpful or good effect.", "One benefit of reading is a larger vocabulary.", "Benefit has one f and ends -fit."],
+  ["boundary", "noun", "a line that marks the edge of an area.", "The fence shows the boundary of the school.", "Boundary ends -ary."],
   ["ceremony", "noun", "a formal event held for an important occasion.", "The award ceremony began after lunch.", "Ceremony ends -mony."],
+  ["desperate", "adjective", "needing something very much or feeling hopeless.", "They made a desperate search for the missing notes.", "Desperate has -per-, not -par-."],
   ["generous", "adjective", "willing to give or share more than expected.", "The generous donation helped the library.", "Generous ends -ous."],
   ["investigate", "verb", "to look into something carefully to find facts.", "The class will investigate how plants grow.", "Investigate begins in- and ends -gate.", "Science"],
-  ["noticeable", "adjective", "easy to see or notice.", "There was a noticeable improvement in her handwriting.", "Noticeable keeps the e from notice before -able."]
+  ["noticeable", "adjective", "easy to see or notice.", "There was a noticeable improvement in her handwriting.", "Noticeable keeps the e from notice before -able."],
+  ["prejudice", "noun", "an unfair opinion formed without enough knowledge.", "The novel explores prejudice and fairness.", "Prejudice begins pre- and ends -dice."],
+  ["signature", "noun", "a person's written name.", "Add your signature at the bottom of the form.", "Signature begins sign- but drops the silent g sound."]
 ]);
 
 const year7 = make("year7", [
@@ -176,14 +186,19 @@ const year7 = make("year7", [
   ["abundance", "noun", "a very large amount of something.", "The garden had an abundance of tomatoes.", "Abundance ends -ance."],
   ["chaotic", "adjective", "very disorganised or confused.", "The first rehearsal was noisy and chaotic.", "Chaotic begins chao-."],
   ["colleague", "noun", "a person you work or study with.", "My colleague shared useful notes after the meeting.", "Colleague ends -league."],
+  ["conscious", "adjective", "awake or aware of something.", "She was conscious of the time limit.", "Conscious begins con- and ends -scious."],
   ["dilemma", "noun", "a difficult choice between options.", "She faced a dilemma about which topic to choose.", "Dilemma has double m."],
+  ["entrepreneur", "noun", "a person who starts and runs a business.", "The entrepreneur designed an app for students.", "Entrepreneur has French-style -eur endings.", "Business"],
+  ["fulfil", "verb", "to complete or satisfy something promised or required.", "Practising daily can fulfil your learning goal.", "Australian spelling uses one l at the end of fulfil."],
   ["hygiene", "noun", "habits that keep people clean and healthy.", "Good hygiene helps stop germs spreading.", "Hygiene begins hy- and ends -giene.", "Medicine"],
   ["leisure", "noun", "free time used for rest or enjoyment.", "He reads mystery novels in his leisure time.", "Leisure has the unusual ei pattern."],
   ["metaphor", "noun", "a figure of speech that describes one thing as another.", "The phrase ocean of stars is a metaphor.", "Metaphor begins meta- and ends -phor.", "Literature"],
   ["parliament", "noun", "the group of elected people who make laws.", "The students visited parliament during civics week.", "Parliament has a silent i after l.", "Civics"],
   ["pronunciation", "noun", "the way a word is spoken.", "Check the pronunciation before the oral task.", "Pronunciation is pro-nun-ci-a-tion, not pronoun-ciation.", "Academic"],
+  ["rhetoric", "noun", "language used to persuade or impress.", "The speech used strong rhetoric.", "Rhetoric begins rh-."],
   ["sufficient", "adjective", "enough for a purpose.", "There was sufficient evidence to support the answer.", "Sufficient ends -cient."],
-  ["voluntary", "adjective", "done by choice rather than because you must.", "The clean-up was a voluntary activity.", "Voluntary ends -ary."]
+  ["voluntary", "adjective", "done by choice rather than because you must.", "The clean-up was a voluntary activity.", "Voluntary ends -ary."],
+  ["withhold", "verb", "to hold back or refuse to give.", "The editor may withhold details until they are checked.", "Withhold is with + hold."]
 ]);
 
 export const JUNIOR_WORDS = [...grade4, ...grade5, ...grade6, ...year7];

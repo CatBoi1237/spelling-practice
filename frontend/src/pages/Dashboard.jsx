@@ -18,6 +18,7 @@ import { DIFFICULTY_META, FOUNDATION_LEVEL_IDS, PATTERN_META } from "@/data/word
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
 import { getMissed, getHistory, countMastered, getDailyLocal } from "@/lib/storage";
+import { getSavedWords } from "@/lib/savedWords";
 import { computeSkill, recommendDifficulty, levelTitle, weakPattern } from "@/lib/skill";
 import { achievementProgress } from "@/lib/achievements";
 import { BeeMascot } from "@/components/BeeMascot";
@@ -49,6 +50,7 @@ export default function Dashboard() {
 
   const history = useMemo(() => getHistory(), []);
   const missed = useMemo(() => getMissed().slice(0, 5), []);
+  const savedCount = useMemo(() => getSavedWords().length, []);
   const mastered = useMemo(() => countMastered(), []);
   const daily = useMemo(() => getDailyLocal(), []);
   const level = useMemo(() => computeSkill(history, stats), [history, stats]);
@@ -174,6 +176,10 @@ export default function Dashboard() {
         <div className="stagger mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
           <QuickCard testId="quick-ten" label="10 Words" sub="Quick round" onClick={() => go("ten")} />
           <QuickCard testId="quick-twentyfive" label="25 Words" sub="Deep session" onClick={() => go("twentyfive")} />
+          <QuickCard testId="quick-saved" label="Saved Words" sub={savedCount ? `${savedCount} bookmarked` : "Build your bank"} onClick={() => savedCount ? go("saved", { difficulty: "mixed" }) : navigate("/library")} />
+          <QuickCard testId="quick-category" label="Science Drill" sub="Topic practice" onClick={() => go("category", { category: "Science" })} />
+          <QuickCard testId="quick-confidence" label="Confidence" sub="Steadier round" onClick={() => go("confidence")} />
+          <QuickCard testId="quick-daily-mix" label="Daily Mix" sub="12 fresh words" onClick={() => go("dailyMix", { difficulty: "mixed" })} />
           <QuickCard testId="quick-endless" label="Endless" sub="Until you stop" onClick={() => go("endless")} />
           <QuickCard testId="quick-challenge" label="Challenge" sub="15s per word" onClick={() => go("challenge")} />
         </div>

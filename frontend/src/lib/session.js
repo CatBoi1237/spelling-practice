@@ -1,6 +1,8 @@
 // Builds a practice queue for a mode, avoiding recently seen words.
 import { WORDS, WORDS_BY_DIFFICULTY, WORD_MAP, MODES } from "@/data/words";
+import { pickDailyWords } from "@/lib/seeded";
 import { getMissed, getSeen, markSeen } from "@/lib/storage";
+import { getSavedWords } from "@/lib/savedWords";
 
 const LEVEL_ORDER = ["grade4", "grade5", "grade6", "year7", "easy", "medium", "hard", "extreme"];
 
@@ -85,6 +87,16 @@ function smartQueue(difficulty, limit) {
   };
 }
 
+function wordsFromNames(names) {
+  return names
+    .map((name) => WORD_MAP.get(String(name).toLowerCase()))
+    .filter(Boolean);
+}
+
+function todaySeed() {
+  return Number(new Date().toISOString().slice(0, 10).replaceAll("-", ""));
+}
+
 export function getMode(id) {
   return MODES.find((m) => m.id === id) || MODES[0];
 }
@@ -102,7 +114,7 @@ export function resolveMode(mode, settings, params) {
 }
 
 // Returns { queue, source } — source describes where the words came from (for UI notices).
-export function buildQueue({ mode, difficulty, pattern, word }) {
+export function buildQueue({ mode, difficulty, pattern, category, origin, word }) {
   let pool;
   let notice = null;
 
@@ -114,7 +126,36 @@ export function buildQueue({ mode, difficulty, pattern, word }) {
     return smartQueue(difficulty, mode.limit || 15);
   }
 
-  if (mode.source === "missed") {
+  if (mode.source === "saved") {
+    const saved = wordsFromNames(getSavedWords());
+    if (saved.length === 0) {
+      notice = "No saved words yet - here's a normal session instead.";
+      pool = WORDS_BY_DIFFICULTY[difficulty] || WORDS_BY_DIFFICULTY.medium;
+    } else {
+      const limit = Math.min(mode.limit || saved.length, saved.length);
+      return { queue: shuffle(saved).slice(0, limit), notice };
+    }
+  } else if (mode.source === "confidence") {
+    const currentIndex = LEVEL_ORDER.indexOf(difficulty === "mixed" ? "medium" : difficulty);
+    const easierId = currentIndex > 0 ? LEVEL_ORDER[currentIndex - 1] : difficulty;
+    pool = WORDS_BY_DIFFICULTY[easierId] || WORDS_BY_DIFFICULTY[difficulty] || WORDS_BY_DIFFICULTY.medium;
+    notice = `Confidence Builder uses ${difficulty === easierId ? "your current level" : "one easier level"} so you can rebuild rhythm.`;
+  } else if (mode.source === "daily-mix") {
+    const queue = pickDailyWords(todaySeed(), mode.limit || 12);
+    return { queue, notice: "Daily Mix uses the same balanced set for everyone today." };
+  } else if (mode.source === "category" && category) {
+    pool = WORDS.filter((w) => w.category === category);
+    if (pool.length < 5) {
+      notice = "That category is still small - mixing in your difficulty too.";
+      pool = [...pool, ...(WORDS_BY_DIFFICULTY[difficulty] || [])];
+    }
+  } else if (mode.source === "origin" && origin) {
+    pool = WORDS.filter((w) => w.origin === origin);
+    if (pool.length < 5) {
+      notice = "That origin group is still small - mixing in your difficulty too.";
+      pool = [...pool, ...(WORDS_BY_DIFFICULTY[difficulty] || [])];
+    }
+  } else if (mode.source === "missed") {
     const missed = getMissed()
       .map((m) => WORD_MAP.get(m.word.toLowerCase()))
       .filter(Boolean);
@@ -141,6 +182,7 @@ export function buildQueue({ mode, difficulty, pattern, word }) {
   }
 
   const seen = new Set(getSeen());
+  pool = [...new Map(pool.map((item) => [item.word.toLowerCase(), item])).values()];
   let fresh = pool.filter((w) => !seen.has(w.word));
   const limit = mode.limit || pool.length;
   // pool exhausted → allow repeats of the oldest-seen words

@@ -1,7 +1,8 @@
 // Builds a practice queue for a mode, avoiding recently seen words.
 import { WORDS, WORDS_BY_DIFFICULTY, WORD_MAP, MODES, TOPIC_PACKS } from "@/data/words";
 import { pickDailyWords } from "@/lib/seeded";
-import { getMissed, getSeen, markSeen } from "@/lib/storage";
+import { getMissed, getSeen, markSeen, getWordStats } from "@/lib/storage";
+import { topicProgress } from "@/lib/topicProgress";
 import { getSavedWords } from "@/lib/savedWords";
 
 const LEVEL_ORDER = ["grade4", "grade5", "grade6", "year7", "easy", "medium", "hard", "extreme"];
@@ -114,7 +115,7 @@ export function resolveMode(mode, settings, params) {
 }
 
 // Returns { queue, source } — source describes where the words came from (for UI notices).
-export function buildQueue({ mode, difficulty, pattern, category, origin, topic, word }) {
+export function buildQueue({ mode, difficulty, pattern, category, origin, topic, focus, word }) {
   let pool;
   let notice = null;
 
@@ -130,6 +131,15 @@ export function buildQueue({ mode, difficulty, pattern, category, origin, topic,
     const selected = TOPIC_PACKS.find((pack) => pack.id === topic) || TOPIC_PACKS[0];
     pool = wordsFromNames(selected.words.map((item) => item.word));
     notice = `${selected.title}: a mix of levels from this topic pack.`;
+    if (focus === "unmastered" || focus === "missed") {
+      const selectedWords = topicProgress(selected, getWordStats())[focus];
+      if (selectedWords.length) {
+        pool = wordsFromNames(selectedWords.map((item) => item.word));
+        notice = `${selected.title}: ${pool.length} ${focus === "missed" ? "missed" : "unmastered"} words to practise.`;
+      } else {
+        notice = `No ${focus === "missed" ? "missed" : "unmastered"} words in ${selected.title}. Enjoy a full-pack refresher.`;
+      }
+    }
   } else if (mode.source === "saved") {
     const saved = wordsFromNames(getSavedWords());
     if (saved.length === 0) {

@@ -38,6 +38,7 @@ function Session() {
   const pattern = params.get("pattern");
   const category = params.get("category");
   const topic = params.get("topic");
+  const focus = params.get("focus");
   const origin = params.get("origin");
   const singleWord = params.get("word");
   const legacyList = params.get("list"); // backwards compat: list=missed
@@ -64,7 +65,7 @@ function Session() {
 
   useEffect(() => {
     const effectiveMode = legacyList === "missed" ? { ...mode, source: "missed" } : mode;
-    const { queue: q, notice: n } = buildQueue({ mode: effectiveMode, difficulty, pattern, category, origin, topic, word: singleWord });
+    const { queue: q, notice: n } = buildQueue({ mode: effectiveMode, difficulty, pattern, category, origin, topic, focus, word: singleWord });
     setQueue(q);
     setNotice(n);
     if (n) toast(n);

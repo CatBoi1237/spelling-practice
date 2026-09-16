@@ -22,12 +22,15 @@ import {
 } from "lucide-react";
 import { CATEGORIES, DIFFICULTY_META, MODES, PATTERN_META, WORDS, TOPIC_PACKS } from "@/data/words";
 import { useApp } from "@/context/AppContext";
-import { getHistory, getMissed } from "@/lib/storage";
+import { getHistory, getMissed, getWordStats } from "@/lib/storage";
 import { getSavedWords } from "@/lib/savedWords";
 import { recommendDifficulty, weakPattern } from "@/lib/skill";
 import { Eyebrow, SectionHeader, Pill } from "@/components/ui-bits";
 import DifficultyPicker from "@/components/DifficultyPicker";
 import { cn } from "@/lib/utils";
+
+import TopicPackCard from "@/components/TopicPackCard";
+import { topicProgress } from "@/lib/topicProgress";
 
 const ICONS = {
   classic: Layers,
@@ -66,6 +69,15 @@ export default function PracticeHub() {
   const [testSeconds, setTestSeconds] = useState(settings.testModeSeconds || 20);
   const [testDef, setTestDef] = useState(!!settings.testShowDefinition);
   const [pattern, setPattern] = useState(null);
+  const [packSearch, setPackSearch] = useState("");
+  const [packFilter, setPackFilter] = useState("all");
+  const packStats = useMemo(() => getWordStats(), []);
+  const packRows = TOPIC_PACKS.map((pack) => ({ pack, progress: topicProgress(pack, packStats) }));
+  const visiblePacks = packRows.filter(({ pack, progress }) => {
+    const query = packSearch.trim().toLowerCase();
+    const matches = !query || [pack.title, pack.description, ...pack.words.map(w => w.word)].some(text => text.toLowerCase().includes(query));
+    return matches && (packFilter === "all" || (packFilter === "unfinished" ? progress.unmastered.length > 0 : progress.missed.length > 0));
+  });
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [origin, setOrigin] = useState("Latin");
 
@@ -325,19 +337,20 @@ export default function PracticeHub() {
       <section aria-label="Topic packs">
         <SectionHeader eyebrow="Explore a theme" title="Topic packs" />
         <p className="mt-2 text-sm text-slate-400">Each pack mixes levels, from familiar words to a few stretching challenges. Packs use their own word selection.</p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {TOPIC_PACKS.map((pack) => (
-            <article key={pack.id} className="flex flex-col rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
-              <h3 className="font-heading text-lg font-bold text-slate-100">{pack.title}</h3>
-              <p className="mt-2 text-sm text-slate-400">{pack.description}</p>
-              <p className="mt-3 text-xs text-amber-300">{pack.words.length} words · Mixed levels</p>
-              <div className="mt-auto flex flex-wrap gap-3 pt-4">
-                <button type="button" data-testid={`topic-${pack.id}`} onClick={() => navigate(`/practice?mode=topic&topic=${pack.id}&difficulty=mixed`)} className="min-h-[44px] rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-400">Practise {pack.title}</button>
-                <button type="button" onClick={() => navigate(`/library?topic=${pack.id}`)} className="min-h-[44px] text-sm font-semibold text-amber-300 hover:text-amber-200">Browse words</button>
-              </div>
-            </article>
-          ))}
+        <p className="mt-2 text-xs text-slate-500">Master a word with three correct answers in a row. Your existing practice counts towards pack progress.</p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <input aria-label="Search topic packs" placeholder="Find a topic or word…" value={packSearch} onChange={e => setPackSearch(e.target.value)} className="min-h-[44px] rounded-xl border border-slate-700 bg-slate-950 px-4 text-sm text-slate-100" />
+          <select aria-label="Filter topic packs by progress" value={packFilter} onChange={e => setPackFilter(e.target.value)} className="min-h-[44px] rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm text-slate-100">
+            <option value="all">All packs</option>
+            <option value="unfinished">Not yet mastered</option>
+            <option value="missed">Have words to review</option>
+          </select>
         </div>
+        <p aria-live="polite" className="mt-3 text-xs text-slate-400">{visiblePacks.length} packs found</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {visiblePacks.map(({ pack, progress }) => <TopicPackCard key={pack.id} pack={pack} progress={progress} />)}
+        </div>
+        {!visiblePacks.length && <p className="mt-4 text-sm text-slate-400">No packs match. Try another search or choose All packs.</p>}
       </section>
 
       <p className="rounded-2xl border border-slate-800 bg-slate-900/30 p-4 text-xs text-slate-500">

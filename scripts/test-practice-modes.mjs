@@ -78,4 +78,29 @@ for (const pack of TOPIC_PACKS) {
   assert.equal(replay.length, 12, 'An already-seen pack can be practised again');
 }
 assert.equal(run('topic', { topic: 'missing-pack' }).queue.length, 12);
+const focusPack = TOPIC_PACKS[0];
+const [masteredWord, missedWord] = focusPack.words;
+const fixture = {
+  [masteredWord.word]: { attempts: 5, correct: 4, incorrect: 1, streak: 3 },
+  [missedWord.word]: { attempts: 2, correct: 0, incorrect: 2, streak: 0 },
+  unrelated: { attempts: 1, correct: 0, incorrect: 1, streak: 0 },
+};
+values.set('sb.wordstats.v1', JSON.stringify(fixture));
+const { topicProgress } = cache.get(path.join(root, 'lib/topicProgress.js')).namespace;
+const progress = topicProgress(focusPack, fixture);
+assert.equal(progress.mastered.length, 1);
+assert.equal(progress.attempted.length, 2);
+assert.equal(progress.unmastered.length, 11);
+assert.equal(progress.missed.length, 1);
+assert.deepEqual(Array.from(run('topic', { topic: focusPack.id, focus: 'missed' }).queue, w => w.word), [missedWord.word]);
+const unfinished = run('topic', { topic: focusPack.id, focus: 'unmastered' }).queue;
+assert.equal(unfinished.length, 11);
+assert.ok(unfinished.every(w => w.word !== masteredWord.word));
+assert.equal(values.get('sb.wordstats.v1'), JSON.stringify(fixture), 'Selecting practice never changes progress');
+values.set('sb.wordstats.v1', JSON.stringify(Object.fromEntries(focusPack.words.map(w => [w.word, { attempts: 3, correct: 3, incorrect: 0, streak: 3 }]))));
+for (const focus of ['unmastered', 'missed']) {
+  const refresher = run('topic', { topic: focusPack.id, focus });
+  assert.equal(refresher.queue.length, 12);
+  assert.ok(refresher.notice.includes('refresher'), 'Empty focus has a clear fallback notice');
+}
 console.log(`Practice mode checks passed; ${WORDS.length} unique words and ${TOPIC_PACKS.length} topic packs.`);

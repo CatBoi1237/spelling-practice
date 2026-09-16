@@ -33,7 +33,7 @@ async function load(file) {
 const session = await load(path.join(root, 'lib/session.js'));
 await session.evaluate();
 const { buildQueue, getMode } = session.namespace;
-const { WORDS, DIFFICULTY_LEVEL_IDS } = cache.get(path.join(root, 'data/words.js')).namespace;
+const { WORDS, WORD_MAP, TOPIC_PACKS, DIFFICULTY_LEVEL_IDS } = cache.get(path.join(root, 'data/words.js')).namespace;
 const run = (mode, options = {}) => buildQueue({ mode: getMode(mode), difficulty: 'medium', ...options });
 assert.equal(new Set(WORDS.map(w => w.word.toLowerCase())).size, WORDS.length, 'Word bank must be unique');
 values.set('spellbee.savedWords.v1', JSON.stringify(['answer', 'busy', 'unknown-word']));
@@ -57,4 +57,25 @@ const daily = run('dailyMix').queue.map(w => w.word);
 assert.equal(daily.length, 12);
 assert.equal(new Set(daily).size, 12);
 assert.deepEqual(run('dailyMix').queue.map(w => w.word), daily, 'Daily selection stays stable after other practice');
-console.log(`Practice mode checks passed; ${WORDS.length} unique words.`);
+assert.equal(getMode('invalid').id, 'classic', 'Invalid modes still fall back to classic practice');
+assert.equal(new Set(TOPIC_PACKS.map(pack => pack.id)).size, TOPIC_PACKS.length);
+for (const pack of TOPIC_PACKS) {
+  const names = new Set(pack.words.map(word => word.word));
+  assert.equal(names.size, 12, `${pack.title} contains twelve unique words`);
+  for (const word of pack.words) {
+    assert.ok(WORD_MAP.has(word.word));
+    assert.ok(DIFFICULTY_LEVEL_IDS.includes(word.difficulty));
+    assert.ok(word.definition && word.example && word.spellingTip);
+    assert.ok(word.example.toLowerCase().includes(word.word), `${word.word} appears in its example`);
+  }
+  for (const difficulty of ['mixed', 'grade4', 'extreme']) {
+    const queue = run('topic', { topic: pack.id, difficulty }).queue;
+    assert.equal(queue.length, 12);
+    assert.equal(new Set(queue.map(word => word.word)).size, 12);
+    assert.ok(queue.every(word => names.has(word.word)), 'Topic practice never adds unrelated words');
+  }
+  const replay = run('topic', { topic: pack.id }).queue;
+  assert.equal(replay.length, 12, 'An already-seen pack can be practised again');
+}
+assert.equal(run('topic', { topic: 'missing-pack' }).queue.length, 12);
+console.log(`Practice mode checks passed; ${WORDS.length} unique words and ${TOPIC_PACKS.length} topic packs.`);

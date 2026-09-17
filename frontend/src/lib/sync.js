@@ -86,7 +86,26 @@ export function mergeProgress(local, remote) {
   };
 
   out[KEYS.seen] = local[KEYS.seen] || remote[KEYS.seen] || [];
-  out[KEYS.settings] = { ...(remote[KEYS.settings] || {}), ...(local[KEYS.settings] || {}) };
+  const remoteSettings = remote[KEYS.settings] || {};
+  const localSettings = local[KEYS.settings] || {};
+  const mergeItems = (a = [], b = []) => {
+    const items = new Map();
+    [...a, ...b].forEach(item => {
+      const key = item.id || `${item.date}:${item.word}:${item.sentence}`;
+      const old = items.get(key);
+      if (!old || (item.updatedAt || "") >= (old.updatedAt || "")) items.set(key, item);
+    });
+    return [...items.values()];
+  };
+  const assignmentTemplates = {};
+  const rt = remoteSettings.assignmentTemplates || {}, lt = localSettings.assignmentTemplates || {};
+  new Set([...Object.keys(rt), ...Object.keys(lt)]).forEach(key => { assignmentTemplates[key] = mergeItems(rt[key], lt[key]); });
+  out[KEYS.settings] = {
+    ...remoteSettings, ...localSettings,
+    personalPacks: mergeItems(remoteSettings.personalPacks, localSettings.personalPacks),
+    sentenceJournal: mergeItems(remoteSettings.sentenceJournal, localSettings.sentenceJournal).slice(-100),
+    assignmentTemplates,
+  };
   mergeTeacherLists(out, local, remote);
   return out;
 }

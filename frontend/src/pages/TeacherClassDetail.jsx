@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 
 import { api, apiError } from "@/lib/api";
+import ClassChallenge from "@/components/ClassChallenge";
 
 const ATTEMPTS = [1, 2, 3, 5];
 
@@ -152,6 +153,7 @@ export default function TeacherClassDetail() {
           </div>
         </div>
       </header>
+      <ClassChallenge room={room} teacher onSaved={challenge => setRoom(value => ({ ...value, challenge }))} />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Stat label="Students" value={summary.students ?? room.student_count} hint="On this roster" />

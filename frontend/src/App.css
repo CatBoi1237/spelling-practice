@@ -67,3 +67,27 @@
         transform: none;
     }
 }
+
+.tool-card { border: 1px solid #334155; border-radius: 1rem; padding: 1.5rem; background: #0f172a; color: #e2e8f0; }
+.tool-button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; border: 1px solid #64748b; border-radius: .7rem; padding: .6rem 1rem; margin: .3rem .4rem .3rem 0; background: #1e293b; color: #fde68a; font-weight: 600; }
+.tool-button:hover { background: #334155; }
+.tool-button:disabled { opacity: .45; cursor: not-allowed; }
+.tool-button:focus-visible, .tool-input:focus-visible { outline: 3px solid #fbbf24; outline-offset: 3px; }
+.tool-input { display: block; max-width: 100%; width: 100%; border: 1px solid #64748b; border-radius: .7rem; background: #020617; color: #f8fafc; padding: .75rem; margin: .4rem 0; }
+.large-text { font-size: 19px; }
+.reduce-motion *, .reduce-motion *::before, .reduce-motion *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+.high-contrast body { background: #000 !important; color: #fff !important; }
+.high-contrast [class*="text-slate-"], .high-contrast [class*="text-gray-"] { color: #fff !important; }
+.high-contrast button, .high-contrast input, .high-contrast select, .high-contrast textarea { border-color: #fff !important; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; } }
+@media print {
+  body * { visibility: hidden; }
+  .worksheet, .worksheet * { visibility: visible; color: #000 !important; background: #fff !important; }
+  .worksheet { position: absolute; left: 0; top: 0; width: 100%; border: 0; padding: 1cm; }
+  .no-print { display: none !important; }
+  .answer-key { break-before: page; }
+  .worksheet li { break-inside: avoid; }
+}
+.high-contrast [class*="bg-"] { background-color: #000 !important; background-image: none !important; }
+.high-contrast button, .high-contrast input, .high-contrast select, .high-contrast textarea { background: #000 !important; color: #fff !important; }
+@media print { .high-contrast .worksheet, .high-contrast .worksheet * { color: #000 !important; background: #fff !important; } }

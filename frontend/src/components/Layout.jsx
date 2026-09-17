@@ -21,6 +21,7 @@ export const NAV_GROUPS = [
       { to: "/practice", label: "Practice", icon: Target, testId: "nav-practice" },
       { to: "/daily", label: "Daily Challenge", short: "Daily", icon: CalendarDays, testId: "nav-daily" },
       { to: "/learn", label: "Lessons", icon: GraduationCap, testId: "nav-learn" },
+      { to: "/learning-tools", label: "Learning Workshop", icon: Library, testId: "nav-learning-tools" },
       { to: "/library", label: "Word Library", icon: Library, testId: "nav-library" },
       { to: "/saved-words", label: "Saved Words", short: "Saved", icon: Bookmark, testId: "nav-saved-words" },
     ],
@@ -30,6 +31,8 @@ export const NAV_GROUPS = [
     label: "Play & compete",
     items: [
       { to: "/multiplayer", label: "Multiplayer", icon: Users, testId: "nav-multiplayer" },
+      { to: "/arcade", label: "Spelling Arcade", icon: Target, testId: "nav-arcade" },
+      { to: "/tournament", label: "Weekly Tournament", icon: Trophy, testId: "nav-tournament" },
       { to: "/join", label: "Join Game", short: "Join", icon: ScanLine, testId: "nav-join" },
       { to: "/leaderboards", label: "Leaderboards", icon: Trophy, testId: "nav-leaderboards" },
     ],

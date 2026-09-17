@@ -38,6 +38,9 @@ import Achievements from "@/pages/Achievements";
 import Library from "@/pages/Library";
 import Learn from "@/pages/Learn";
 import Leaderboards from "@/pages/Leaderboards";
+import Arcade from "@/pages/Arcade";
+import LearningTools from "@/pages/LearningTools";
+import Tournament from "@/pages/Tournament";
 import "@/App.css";
 
 function teacherPage(page) {
@@ -59,6 +62,9 @@ function App() {
             <Route element={<Layout />}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/practice" element={<Practice />} />
+              <Route path="/arcade" element={<Arcade />} />
+              <Route path="/learning-tools" element={<LearningTools />} />
+              <Route path="/tournament" element={<Tournament />} />
               <Route path="/results" element={<Results />} />
               <Route path="/progress" element={<Progress />} />
               <Route path="/profile" element={<Profile />} />

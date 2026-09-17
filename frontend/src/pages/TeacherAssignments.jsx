@@ -22,6 +22,7 @@ import { api, apiError } from "@/lib/api";
 import { getCustomWordLists } from "@/lib/customWordLists";
 import { DIFFICULTY_LEVEL_IDS, DIFFICULTY_META, WORDS_BY_DIFFICULTY } from "@/data/words";
 import AssignmentQrButton from "@/components/AssignmentQrButton";
+import AssignmentTemplates from "@/components/AssignmentTemplates";
 
 const COUNTS = [5, 10, 15, 25];
 const ATTEMPTS = [1, 2, 3, 5];
@@ -207,6 +208,7 @@ export default function TeacherAssignments() {
           </button>
         </div>
       </header>
+      <AssignmentTemplates values={{ title, source, count, attempts }} onApply={row => { setTitle(row.title); setSource(row.source); setCount(row.count); setAttempts(row.attempts); setDueAt(""); }} />
 
       <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
         <form onSubmit={create} className="rounded-3xl border border-slate-800 bg-slate-900/45 p-6 sm:p-7">

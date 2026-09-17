@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { api, apiError } from "@/lib/api";
+import ClassChallenge from "@/components/ClassChallenge";
 import { useAuth } from "@/context/AuthContext";
 import { getPlayerId } from "@/lib/identity";
 
@@ -91,6 +92,7 @@ export default function StudentClass() {
         </div>
         <div className="mt-5 inline-flex rounded-xl border border-amber-500/20 bg-slate-950/50 px-4 py-2 font-mono text-xl font-black tracking-[0.22em] text-amber-300">{room.code}</div>
       </header>
+      {room.joined && <ClassChallenge room={room} />}
 
       {!room.joined ? (
         <form onSubmit={join} className="rounded-3xl border border-slate-800 bg-slate-900/45 p-6 sm:p-8">

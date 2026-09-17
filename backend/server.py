@@ -1376,14 +1376,22 @@ METRICS = {
 
 
 @api_router.get("/leaderboards")
-async def leaderboards(period: str = "weekly", metric: str = "score", player_id: Optional[str] = None, limit: int = 25):
+async def leaderboards(period: str = "weekly", metric: str = "score", player_id: Optional[str] = None, limit: int = 25, difficulty: Optional[str] = None, tournament: bool = False):
     if period not in PERIOD_DAYS or metric not in METRICS:
         raise HTTPException(status_code=400, detail="Invalid period or metric")
     field, direction, extra = METRICS[metric]
     match = dict(extra or {})
+    if difficulty is not None:
+        if difficulty not in {"grade4", "grade5", "grade6", "year7", "easy", "medium", "hard", "extreme"}:
+            raise HTTPException(status_code=400, detail="Invalid difficulty")
+        match["difficulty"] = difficulty
     days = PERIOD_DAYS[period]
     if days:
         match["created_at"] = {"$gte": (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()}
+    if tournament:
+        now = datetime.now(timezone.utc)
+        monday = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+        match.update({"mode": "weekly", "total": 10, "created_at": {"$gte": monday.isoformat()}})
     pipeline = [
         {"$match": match},
         {"$sort": {field: direction, "created_at": 1}},

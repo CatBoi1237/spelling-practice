@@ -41,11 +41,11 @@ function mulberry32(seed) {
   };
 }
 
-export function pickSeededWords(seed, count, difficulty = "mixed") {
+export function pickSeededWords(seed, count, difficulty = "mixed", allowCustom = true) {
   // Race and Classroom pages may have a teacher-selected custom list attached
   // to the current room. Keeping this lookup here means every existing caller
   // (Race, Classroom host controls, results reporting) stays in sync.
-  const custom = getActiveGameCustomList();
+  const custom = allowCustom ? getActiveGameCustomList() : null;
   if (custom?.words?.length) {
     return customWordObjects(custom).slice(0, count);
   }

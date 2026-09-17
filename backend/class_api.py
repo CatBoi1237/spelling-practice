@@ -19,6 +19,11 @@ class ClassArchiveBody(BaseModel):
     archived: bool
 
 
+class ClassChallengeBody(BaseModel):
+    title: str = Field(min_length=1, max_length=80)
+    target: int = Field(ge=1, le=10000)
+
+
 class ClassAssignmentBody(BaseModel):
     title: str = Field(min_length=1, max_length=80)
     words: List[str]
@@ -124,6 +129,29 @@ def register_class_routes(
             None,
         )
 
+    async def challenge_view(doc: dict):
+        challenge = doc.get("challenge")
+        if not challenge:
+            return None
+        roster_ids = {student.get("player_id") for student in doc.get("students", [])}
+        assignments = await db.assignments.find({"class_code": doc["code"], "status": {"$ne": "deleted"}}, {"_id": 0}).to_list(500)
+        completed = 0
+        for assignment in assignments:
+            ids = await db.assignment_submissions.distinct("player_id", {"assignment_code": assignment["code"]})
+            completed += len(roster_ids.intersection(ids))
+        return {**challenge, "completed": completed}
+
+    @api_router.put("/teacher/classes/{code}/challenge")
+    async def set_class_challenge(code: str, body: ClassChallengeBody, user: dict = Depends(get_current_user)):
+        doc = await require_class_teacher(code, user)
+        title = body.title.strip()
+        if not title:
+            raise HTTPException(status_code=400, detail="Give the challenge a title")
+        challenge = {"title": title, "target": body.target}
+        await db.school_classes.update_one({"code": doc["code"]}, {"$set": {"challenge": challenge}})
+        doc["challenge"] = challenge
+        return await challenge_view(doc)
+
     async def public_class_view(doc: dict, player_id: Optional[str] = None):
         member = student_member(doc, player_id)
         out = {
@@ -142,6 +170,7 @@ def register_class_routes(
             } if member else None,
         }
         if member:
+            out["challenge"] = await challenge_view(doc)
             assignments = await db.assignments.find(
                 {"class_code": doc["code"], "status": {"$ne": "deleted"}},
                 {"_id": 0},
@@ -181,6 +210,7 @@ def register_class_routes(
             "student_count": len(doc.get("students", [])),
             "assignments": assignment_rows,
             "assignment_count": len(assignment_rows),
+            "challenge": await challenge_view(doc),
             "active_assignment_count": sum(1 for item in assignment_rows if item.get("status") == "active"),
         }
 

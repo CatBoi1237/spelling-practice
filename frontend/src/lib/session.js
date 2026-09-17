@@ -3,6 +3,9 @@ import { WORDS, WORDS_BY_DIFFICULTY, WORD_MAP, MODES, TOPIC_PACKS } from "@/data
 import { pickDailyWords } from "@/lib/seeded";
 import { getMissed, getSeen, markSeen, getWordStats } from "@/lib/storage";
 import { topicProgress } from "@/lib/topicProgress";
+import { getSettings } from "@/lib/storage";
+import { wordObject, weekStart } from "@/lib/learningTools";
+import { pickSeededWords } from "@/lib/seeded";
 import { getSavedWords } from "@/lib/savedWords";
 
 const LEVEL_ORDER = ["grade4", "grade5", "grade6", "year7", "easy", "medium", "hard", "extreme"];
@@ -115,7 +118,7 @@ export function resolveMode(mode, settings, params) {
 }
 
 // Returns { queue, source } — source describes where the words came from (for UI notices).
-export function buildQueue({ mode, difficulty, pattern, category, origin, topic, focus, word }) {
+export function buildQueue({ mode, difficulty, pattern, category, origin, topic, focus, pack, word }) {
   let pool;
   let notice = null;
 
@@ -125,6 +128,16 @@ export function buildQueue({ mode, difficulty, pattern, category, origin, topic,
 
   if (mode.source === "smart") {
     return smartQueue(difficulty, mode.limit || 15);
+  }
+
+  if (mode.source === "weekly") {
+    const seed = Number(weekStart().replaceAll("-", ""));
+    return { queue: pickSeededWords(seed, 10, difficulty, false), notice: "Weekly tournament: the same ten words for everyone in your level, Monday to Sunday (UTC)." };
+  }
+  if (mode.source === "personal") {
+    const selected = (getSettings().personalPacks || []).find(p => p.id === pack);
+    if (selected?.words?.length) return { queue: shuffle(selected.words.map(wordObject)), notice: `Personal pack: ${selected.title}` };
+    return { queue: shuffle(WORDS_BY_DIFFICULTY.grade5).slice(0, 10), notice: "This personal pack is not available on this device. Starting a Very Easy practice round." };
   }
 
   if (mode.source === "topic") {

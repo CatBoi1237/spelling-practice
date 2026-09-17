@@ -1,11 +1,15 @@
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
-import { MemoryRouter } from "react-router-dom";
 import Arcade from "./Arcade";
 import FlappyFlight from "@/components/FlappyFlight";
 import { getHistory, getWordStats } from "@/lib/storage";
 
 global.IS_REACT_ACT_ENVIRONMENT = true;
+let mockSearch = '';
+jest.mock('react-router-dom', () => ({
+  useSearchParams: () => [new URLSearchParams(mockSearch)],
+  Link: ({ to, children, ...props }) => <a href={to} {...props}>{children}</a>,
+}), { virtual: true });
 jest.mock("@/context/AppContext", () => ({ useApp: () => ({ settings: { reducedMotion: true }, updateStats: jest.fn(), refresh: jest.fn() }) }));
 jest.mock("@/lib/speech", () => ({ speak: jest.fn(), cancelSpeech: jest.fn() }));
 jest.mock("@/data/words", () => ({
@@ -16,7 +20,7 @@ jest.mock("@/data/words", () => ({
 let host, root;
 beforeEach(() => { localStorage.clear(); host = document.createElement("div"); document.body.append(host); root = createRoot(host); });
 afterEach(() => { act(() => root.unmount()); host.remove(); });
-function render(url) { act(() => root.render(<MemoryRouter initialEntries={[url]}><Arcade /></MemoryRouter>)); }
+function render(url) { mockSearch = url.split('?')[1] || ''; act(() => root.render(<Arcade />)); }
 function click(text) { const button = [...host.querySelectorAll("button")].find(b => b.textContent.includes(text)); act(() => button.click()); }
 function enter(text) { const input = host.querySelector('input'); act(() => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, text); input.dispatchEvent(new Event('input', { bubbles: true })); }); }
 function submit() { act(() => host.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))); }

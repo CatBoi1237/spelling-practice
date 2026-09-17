@@ -228,13 +228,9 @@ webpackConfig.devServer = (devServerConfig) =>
 
 webpackConfig.jest = {
   configure: (jestConfig) => ({ ...jestConfig,
-    transformIgnorePatterns: ["/node_modules/(?!react-router(?:-dom)?/)"],
     moduleNameMapper: {
     ...jestConfig.moduleNameMapper,
     "^@/(.*)$": "<rootDir>/src/$1",
-    "^react-router-dom$": require.resolve("react-router-dom"),
-    "^react-router$": require.resolve("react-router"),
-    "^react-router/dom$": require.resolve("react-router/dom"),
   } }),
 };
 module.exports = webpackConfig;

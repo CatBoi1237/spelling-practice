@@ -2,7 +2,7 @@ import asyncio
 import pytest
 from fastapi import HTTPException
 from pydantic import ValidationError
-from test_role_switch import Database, Collection, routes, endpoint
+from .test_role_switch import Database, Collection, routes, endpoint
 from class_api import ClassChallengeBody
 
 

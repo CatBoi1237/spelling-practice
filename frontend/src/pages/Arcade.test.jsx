@@ -2,6 +2,7 @@ import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import Arcade from "./Arcade";
+import FlappyFlight from "@/components/FlappyFlight";
 import { getHistory, getWordStats } from "@/lib/storage";
 
 global.IS_REACT_ACT_ENVIRONMENT = true;
@@ -49,4 +50,20 @@ test("choosing a word pair does not count as spelling mastery", () => {
   click('Continue');
   expect(host.textContent).toContain('The children packed');
   expect(host.querySelector('input:checked')).toBeNull();
+});
+test("flight can pause, skip and clean up without duplicate completions", () => {
+  jest.useFakeTimers();
+  const raf = jest.spyOn(window, 'requestAnimationFrame').mockImplementation(fn => setTimeout(() => fn(Date.now()), 16));
+  const cancel = jest.spyOn(window, 'cancelAnimationFrame').mockImplementation(id => clearTimeout(id));
+  const finished = jest.fn();
+  act(() => root.render(<FlappyFlight onFinish={finished} />));
+  click('Pause');
+  act(() => jest.advanceTimersByTime(5000));
+  expect(finished).not.toHaveBeenCalled();
+  click('Skip flight');
+  act(() => jest.advanceTimersByTime(5000));
+  expect(finished).toHaveBeenCalledTimes(1);
+  expect(finished).toHaveBeenCalledWith(true);
+  act(() => root.unmount()); root = createRoot(host);
+  raf.mockRestore(); cancel.mockRestore(); jest.useRealTimers();
 });

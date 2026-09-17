@@ -227,6 +227,12 @@ webpackConfig.devServer = (devServerConfig) =>
   makeDevServerV5Compatible(configureDevServer(devServerConfig));
 
 webpackConfig.jest = {
-  configure: (jestConfig) => ({ ...jestConfig, moduleNameMapper: { ...jestConfig.moduleNameMapper, "^@/(.*)$": "<rootDir>/src/$1" } }),
+  configure: (jestConfig) => ({ ...jestConfig, moduleNameMapper: {
+    ...jestConfig.moduleNameMapper,
+    "^@/(.*)$": "<rootDir>/src/$1",
+    "^react-router-dom$": require.resolve("react-router-dom"),
+    "^react-router$": require.resolve("react-router"),
+    "^react-router/dom$": require.resolve("react-router/dom"),
+  } }),
 };
 module.exports = webpackConfig;

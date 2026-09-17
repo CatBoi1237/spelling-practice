@@ -90,3 +90,4 @@
 }
 .high-contrast [class*="bg-"] { background-color: #000 !important; background-image: none !important; }
 .high-contrast button, .high-contrast input, .high-contrast select, .high-contrast textarea { background: #000 !important; color: #fff !important; }
+@media print { .high-contrast .worksheet, .high-contrast .worksheet * { color: #000 !important; background: #fff !important; } }

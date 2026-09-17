@@ -38,6 +38,7 @@ function Round({ game, level }) {
   const target = item?.answer || item?.word;
   const label = GAMES.find(([id]) => id === game)[1];
   const best = useMemo(() => Math.max(0, ...getHistory().filter(h => h.mode === `arcade-${game}` && h.difficulty === level).map(h => h.points || 0)), [game, level]);
+  const bestAccuracy = useMemo(() => Math.max(0, ...getHistory().filter(h => h.mode === `arcade-${game}` && h.difficulty === level && h.correct + h.incorrect === questions.length).map(h => Math.round(h.correct / questions.length * 100))), [game, level, questions.length]);
   useEffect(() => () => cancelSpeech(), []);
   const flightEnd = useCallback(safe => { if (!safe) setLives(v => Math.max(0, v - 1)); setPhase("spell"); }, []);
   const finish = nextRows => {
@@ -58,7 +59,7 @@ function Round({ game, level }) {
   const next = () => { if (index + 1 === questions.length || (game === "flappy" && lives === 0)) { finish(rows); return; } setIndex(i => i + 1); setAnswer(""); setResult(null); locked.current = false; setPhase(game === "flappy" && !reducedMotion ? "fly" : "spell"); };
   const score = rows.filter(r => r.right).length * 100;
   return <div className="mx-auto max-w-2xl space-y-5"><Link to="/arcade" className="tool-button">← Arcade</Link><h1 className="text-3xl font-black">{label}</h1>
-    <p>Personal best: {best} points · {DIFFICULTY_META[level]?.label || "Very Easy"}</p>
+    <p>Personal best: {best} points · Best full-round accuracy: {bestAccuracy}% · {DIFFICULTY_META[level]?.label || "Very Easy"}</p>
     {done ? <section className="tool-card"><h2 className="text-2xl font-bold">Round complete · {score} points</h2><p>{score > best ? "New personal best!" : "Keep practising to improve your best."}</p><p>{rows.filter(r => r.right).length} correct out of {rows.length}</p><Link to="/arcade" className="tool-button">Choose another game</Link><Link to="/practice?mode=mistakes&difficulty=mixed" className="tool-button">Review spelling mistakes</Link></section> : <>
       <p>Word {index + 1}/{questions.length}{game === "flappy" ? ` · ${lives} flight lives` : ""} · {score} points</p>
       {phase === "fly" ? <FlappyFlight key={index} onFinish={flightEnd} /> : <form className="tool-card space-y-4" onSubmit={check}>

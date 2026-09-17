@@ -88,3 +88,5 @@
   .answer-key { break-before: page; }
   .worksheet li { break-inside: avoid; }
 }
+.high-contrast [class*="bg-"] { background-color: #000 !important; background-image: none !important; }
+.high-contrast button, .high-contrast input, .high-contrast select, .high-contrast textarea { background: #000 !important; color: #fff !important; }

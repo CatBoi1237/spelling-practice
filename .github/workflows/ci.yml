@@ -29,6 +29,8 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Test practice modes
         run: node --experimental-vm-modules ../scripts/test-practice-modes.mjs
+      - name: Test arcade interactions
+        run: yarn test --watchAll=false --runInBand --testPathPattern='(Arcade|LearningTools).test'
       - name: Build frontend
         run: yarn build
 
@@ -47,4 +49,4 @@ jobs:
       - name: Install role-test dependencies
         run: python -m pip install fastapi==0.110.1 'pytest>=8.0.0' pytest-xdist
       - name: Test account roles
-        run: python -m pytest -q backend/tests/test_role_switch.py
+        run: python -m pytest -q backend/tests/test_role_switch.py backend/tests/test_learning_expansion.py

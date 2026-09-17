@@ -35,6 +35,11 @@ export function AppProvider({ children }) {
   }, [theme]);
 
   const setTheme = useCallback((t) => setThemeState(t), []);
+  useEffect(() => {
+    document.documentElement.classList.toggle("large-text", Boolean(settings.largeText));
+    document.documentElement.classList.toggle("reduce-motion", Boolean(settings.reducedMotion));
+    document.documentElement.classList.toggle("high-contrast", Boolean(settings.highContrast));
+  }, [settings.largeText, settings.reducedMotion, settings.highContrast]);
 
   const updateSettings = useCallback((patch) => {
     setSettings((prev) => {

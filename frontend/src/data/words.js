@@ -108,4 +108,6 @@ export const MODES = [
   { id: "judge", label: "Judge Mode", description: "A real bee: ask the judge for definition, sentence, origin.", limit: 10, judge: true, group: "arena" },
   { id: "dailyMix", label: "Daily Mix", description: "A balanced 12-word set that changes each day.", limit: 12, source: "daily-mix", group: "arena" },
   { id: "topic", label: "Topic Pack", description: "Practise a curated set of words around one theme.", limit: 12, source: "topic", group: "packs" },
+  { id: "personal", label: "Personal Pack", limit: 50, source: "personal", group: "packs" },
+  { id: "weekly", label: "Weekly Tournament", limit: 10, source: "weekly", timer: 25, singlePlay: true, noHints: true, group: "packs" },
 ];

@@ -76,6 +76,9 @@ export default function Settings() {
       </Section>
 
       <Section title="Audio">
+        <ToggleRow testId="settings-large-text" label="Larger text" hint="Increase text size throughout SpellBee" checked={!!settings.largeText} onChange={v => updateSettings({ largeText: v })} />
+        <ToggleRow testId="settings-reduced-motion" label="Reduce motion" hint="Limit animations and use spelling-only play in Flappy Bee" checked={!!settings.reducedMotion} onChange={v => updateSettings({ reducedMotion: v })} />
+        <ToggleRow testId="settings-high-contrast" label="High contrast" hint="Strengthen text and control contrast" checked={!!settings.highContrast} onChange={v => updateSettings({ highContrast: v })} />
         <Row label="Accent" hint="Preferred English variety for the speaking voice">
           <Segmented testId="settings-lang" options={VOICE_LANGS.map((l) => [l.id, l.id === "auto" ? "Auto" : l.id.replace("en-", "")])} value={settings.voiceLang || "auto"} onChange={(v) => updateSettings({ voiceLang: v, voiceName: null })} />
         </Row>

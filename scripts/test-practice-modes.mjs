@@ -25,12 +25,12 @@ async function load(file) {
     ? new vm.SyntheticModule(['default'], function () { this.setExport('default', JSON.parse(source)); }, { context, identifier: file })
     : new vm.SourceTextModule(source, { context, identifier: file });
   cache.set(file, module);
-  await module.link((specifier, parent) => load(specifier.startsWith('@/')
-    ? path.join(root, specifier.slice(2))
-    : path.resolve(path.dirname(parent.identifier), specifier)));
   return module;
 }
 const session = await load(path.join(root, 'lib/session.js'));
+await session.link((specifier, parent) => load(specifier.startsWith('@/')
+  ? path.join(root, specifier.slice(2))
+  : path.resolve(path.dirname(parent.identifier), specifier)));
 await session.evaluate();
 const { buildQueue, getMode } = session.namespace;
 const { WORDS, WORD_MAP, TOPIC_PACKS, DIFFICULTY_LEVEL_IDS } = cache.get(path.join(root, 'data/words.js')).namespace;
@@ -104,3 +104,20 @@ for (const focus of ['unmastered', 'missed']) {
   assert.ok(refresher.notice.includes('refresher'), 'Empty focus has a clear fallback notice');
 }
 console.log(`Practice mode checks passed; ${WORDS.length} unique words and ${TOPIC_PACKS.length} topic packs.`);
+const { parsePersonalWords, redactWord, csv, wordSearch, weekStart } = cache.get(path.join(root, 'lib/learningTools.js')).namespace;
+assert.deepEqual(Array.from(parsePersonalWords('Bee, bee; rocket\nplanet')), ['bee', 'rocket', 'planet']);
+assert.equal(weekStart(new Date('2026-09-20T23:59:00Z')), '2026-09-14');
+assert.equal(weekStart(new Date('2026-09-21T00:00:00Z')), '2026-09-21');
+assert.ok(!redactWord('The BEE is a bee.', 'bee').toLowerCase().includes('bee'));
+assert.ok(csv([['=SUM(A1)', 'He said "hello"']]).includes("'=SUM(A1)"));
+const search = wordSearch(TOPIC_PACKS[0].words);
+for (const p of search.placements) assert.equal(search.grid[p.row].slice(p.col, p.col + p.word.length).join(''), p.word);
+values.set('sb.settings.v1', JSON.stringify({ personalPacks: [{ id: 'test', title: 'Homework', words: ['bee', 'mynewword', 'rocket'] }] }));
+const personalQueue = run('personal', { pack: 'test' }).queue;
+assert.equal(personalQueue.length, 3);
+assert.ok(personalQueue.some(w => w.word === 'mynewword' && w.difficulty === 'custom'));
+assert.ok(run('personal', { pack: 'missing' }).notice.includes('not available'));
+const weeklyA = run('weekly', { difficulty: 'grade5' }).queue.map(w => w.word);
+assert.deepEqual(run('weekly', { difficulty: 'grade5' }).queue.map(w => w.word), weeklyA);
+assert.equal(new Set(weeklyA).size, 10);
+console.log('Learning tools, personal packs and weekly selection checks passed.');

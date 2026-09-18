@@ -1,6 +1,6 @@
 import { mergeProgress } from "./sync";
 import { KEYS } from "./storage";
-import { importPersonalPack, validatePersonalPack, wordSearch, completedQuestRound } from "./learningTools";
+import { importPersonalPack, validatePersonalPack, wordSearch, completedQuestRound, sessionsCsv, sentencesCsv } from "./learningTools";
 import { scrambleWord, missingLetters } from "./arcadeChallenges";
 jest.mock("@/lib/api", () => ({ api: {} }));
 
@@ -59,4 +59,12 @@ test("quests only count full topic rounds and sync retains all earned completion
   const remote = { [KEYS.settings]: { questCompletions: { space: true, garden: false } } };
   expect(mergeProgress(local, remote)[KEYS.settings].questCompletions).toEqual({ garden: true, space: true });
   expect(mergeProgress(remote, local)[KEYS.settings].questCompletions).toEqual({ garden: true, space: true });
+});
+
+test('progress exports include meaningful totals and quote spreadsheet formulas safely', () => {
+  const sessions = sessionsCsv([{ date: '2026-09-18', mode: 'arcade-memory', difficulty: 'grade5', correct: 3, incorrect: 1, points: 300, avgTime: 2.125 }]);
+  expect(sessions).toContain('"75"'); expect(sessions).toContain('"2.13"');
+  const sentences = sentencesCsv([{ date: '2026-09-18', word: 'bee', sentence: '=HYPERLINK("bad")' }]);
+  expect(sentences).toContain("'=HYPERLINK");
+  expect(sentences).toContain('""bad""');
 });

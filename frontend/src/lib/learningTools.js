@@ -50,6 +50,15 @@ export function csv(rows) {
 export function progressCsv() {
   return csv([["Word", "Attempts", "Correct", "Incorrect", "Streak", "Last attempted"], ...Object.entries(getWordStats()).map(([word, s]) => [word, s.attempts, s.correct, s.incorrect, s.streak, s.lastAttempted])]);
 }
+export function sessionsCsv(history = getHistory()) {
+  return csv([["Date", "Mode", "Difficulty", "Correct", "Incorrect", "Accuracy (%)", "Points", "Average seconds per answer"], ...history.map(s => {
+    const correct = Number(s.correct) || 0, incorrect = Number(s.incorrect) || 0;
+    return [s.date, s.modeLabel || s.mode, s.difficulty, correct, incorrect, correct + incorrect ? Math.round(correct / (correct + incorrect) * 100) : 0, s.points || 0, Number.isFinite(s.avgTime) ? s.avgTime.toFixed(2) : ""];
+  })]);
+}
+export function sentencesCsv(journal = getSettings().sentenceJournal || []) {
+  return csv([["Date", "Word", "Sentence"], ...journal.map(s => [s.date, s.word, s.sentence])]);
+}
 export function calendarDays(now = new Date()) {
   const counts = {};
   getHistory().forEach(s => {

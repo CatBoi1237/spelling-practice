@@ -22,6 +22,7 @@ class ClassArchiveBody(BaseModel):
 class ClassChallengeBody(BaseModel):
     title: str = Field(min_length=1, max_length=80)
     target: int = Field(ge=1, le=10000)
+    restart: bool = False
 
 
 class ClassAssignmentBody(BaseModel):
@@ -137,9 +138,15 @@ def register_class_routes(
         assignments = await db.assignments.find({"class_code": doc["code"], "status": {"$ne": "deleted"}}, {"_id": 0}).to_list(500)
         completed = 0
         for assignment in assignments:
-            ids = await db.assignment_submissions.distinct("player_id", {"assignment_code": assignment["code"]})
+            query = {"assignment_code": assignment["code"]}
+            if challenge.get("started_at"):
+                query["submitted_at"] = {"$gte": challenge["started_at"]}
+            ids = await db.assignment_submissions.distinct("player_id", query)
             completed += len(roster_ids.intersection(ids))
-        return {**challenge, "completed": completed}
+        out = {**challenge, "completed": completed}
+        if doc.get("challenge_history"):
+            out["history"] = doc["challenge_history"]
+        return out
 
     @api_router.put("/teacher/classes/{code}/challenge")
     async def set_class_challenge(code: str, body: ClassChallengeBody, user: dict = Depends(get_current_user)):
@@ -147,9 +154,17 @@ def register_class_routes(
         title = body.title.strip()
         if not title:
             raise HTTPException(status_code=400, detail="Give the challenge a title")
-        challenge = {"title": title, "target": body.target}
-        await db.school_classes.update_one({"code": doc["code"]}, {"$set": {"challenge": challenge}})
-        doc["challenge"] = challenge
+        challenge = {**(doc.get("challenge") or {}), "title": title, "target": body.target}
+        changes = {"challenge": challenge}
+        if body.restart:
+            now = _iso()
+            previous = await challenge_view(doc)
+            if previous:
+                previous.pop("history", None)
+                changes["challenge_history"] = [*doc.get("challenge_history", []), {**previous, "ended_at": now}]
+            challenge["started_at"] = now
+        await db.school_classes.update_one({"code": doc["code"]}, {"$set": changes})
+        doc.update(changes)
         return await challenge_view(doc)
 
     async def public_class_view(doc: dict, player_id: Optional[str] = None):

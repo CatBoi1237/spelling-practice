@@ -5,8 +5,9 @@ import { WORD_PAIRS, WORD_PARTS } from "@/data/wordGames";
 import { useApp } from "@/context/AppContext";
 import { recordWordAttempt, appendHistory, getArcadeRecords } from "@/lib/storage";
 import { redactWord } from "@/lib/learningTools";
-import { speak, cancelSpeech } from "@/lib/speech";
+import { cancelSpeech } from "@/lib/speech";
 import { scrambleWord, missingLetters, spellingSeconds, sampleRound } from "@/lib/arcadeChallenges";
+import ArcadeAudio from "@/components/ArcadeAudio";
 import FlappyFlight from "@/components/FlappyFlight";
 
 const GAMES = [
@@ -45,6 +46,8 @@ function Round({ game, level, onReplay }) {
   const [studying, setStudying] = useState(game === "memory");
   const item = questions[index];
   const target = item?.answer || item?.word;
+  const audioText = game === "pairs" ? item.sentence.replace("_____", "blank") : game === "parts" ? `Add the ${item.position}, ${item.part.split("").join(", ")}, to the word ${item.base}.` : target;
+  const audioLabel = game === "pairs" ? "Hear sentence" : game === "parts" ? "Hear instruction" : "Hear word";
   const label = GAMES.find(([id]) => id === game)[1];
   const previousRecord = useMemo(() => getArcadeRecords()[`arcade-${game}:${level}`], [game, level]);
   const best = previousRecord?.points || 0;
@@ -60,7 +63,7 @@ function Round({ game, level, onReplay }) {
     updateStats(prev => ({ ...prev, sessions: prev.sessions + 1 })); refresh(); setDone(true);
   };
   const check = e => {
-    e.preventDefault(); if (locked.current || studying || !answer.trim()) return; locked.current = true;
+    e.preventDefault(); if (locked.current || studying || !answer.trim()) return; locked.current = true; cancelSpeech();
     const right = answer.trim().toLowerCase() === target.toLowerCase();
     // Pair questions assess usage, not spelling; don't inflate spelling mastery.
     if (game !== "pairs") recordWordAttempt(target, right);
@@ -76,7 +79,8 @@ function Round({ game, level, onReplay }) {
     {done ? <section className="tool-card"><h2 className="text-2xl font-bold">Round complete · {score} points</h2><p>{score > best ? "New personal best!" : "Keep practising to improve your best."}</p><p>{rows.filter(r => r.right).length} correct out of {rows.length} · {average.toFixed(1)} seconds per answer</p>{rows.length === questions.length && rows.every(r => r.right) && (bestSpeed === null || average < bestSpeed) && <p>New perfect-round speed record!</p>}<button type="button" className="tool-button" onClick={onReplay}>Play another round</button><Link to="/arcade" className="tool-button">Choose another game</Link><Link to="/practice?mode=mistakes&difficulty=mixed" className="tool-button">Review spelling mistakes</Link></section> : <>
       <p>Word {index + 1}/{questions.length}{game === "flappy" ? ` · ${lives} flight lives` : ""} · {score} points</p>
       {phase === "fly" ? <FlappyFlight key={index} onFinish={flightEnd} /> : <form className="tool-card space-y-4" onSubmit={check}>
-        {game === "memory" ? <div><p>Look carefully, say the word, then cover it when you are ready.</p>{studying ? <><p className="my-4 text-3xl font-bold" aria-live="polite">{target}</p><button type="button" className="tool-button" onClick={() => { setStudying(false); answerStarted.current = Date.now(); }}>Cover word and spell</button></> : <p>Spell the word you just studied.</p>}</div> : game === "scramble" || game === "missing" ? <><p>{redactWord(item.definition, target)}</p><p className="text-2xl font-mono tracking-widest" aria-label={game === "scramble" ? "Mixed letters" : "Word with missing letters"}>{game === "scramble" ? scrambleWord(target).split("").join(" ") : missingLetters(target)}</p><p>Type the complete word.</p></> : game === "pairs" ? <p className="text-xl">{item.sentence}</p> : game === "parts" ? <p className="text-xl">Add the {item.position} <strong>{item.position === "prefix" ? `${item.part}-` : `-${item.part}`}</strong> to <strong>{item.base}</strong>. What word do you get?</p> : <><p className="text-xl">{game === "detective" ? redactWord(item.definition, target) : "Listen to the word, then spell it."}</p><button type="button" className="tool-button" onClick={() => speak(target, { rate: settings.rate, voiceName: settings.voiceName, voiceLang: settings.voiceLang })}>Hear word</button><p>{target.length} letters</p></>}
+        {game === "memory" ? <div><p>Look carefully, say the word, then cover it when you are ready.</p>{studying ? <><p className="my-4 text-3xl font-bold" aria-live="polite">{target}</p><button type="button" className="tool-button" onClick={() => { setStudying(false); answerStarted.current = Date.now(); }}>Cover word and spell</button></> : <p>Spell the word you just studied.</p>}</div> : game === "scramble" || game === "missing" ? <><p>{redactWord(item.definition, target)}</p><p className="text-2xl font-mono tracking-widest" aria-label={game === "scramble" ? "Mixed letters" : "Word with missing letters"}>{game === "scramble" ? scrambleWord(target).split("").join(" ") : missingLetters(target)}</p><p>Type the complete word.</p></> : game === "pairs" ? <p className="text-xl">{item.sentence}</p> : game === "parts" ? <p className="text-xl">Add the {item.position} <strong>{item.position === "prefix" ? `${item.part}-` : `-${item.part}`}</strong> to <strong>{item.base}</strong>. What word do you get?</p> : <><p className="text-xl">{game === "detective" ? redactWord(item.definition, target) : "Listen to the word, then spell it."}</p><p>{target.length} letters</p></>}
+        {(game !== "memory" || studying || result !== null) && <ArcadeAudio key={index} text={audioText} settings={settings} label={audioLabel} autoPlay={game === "flappy" && result === null && settings.autoPlay !== false} />}
         {game === "pairs" ? <fieldset disabled={result !== null}><legend>Choose a word</legend>{item.options.map(option => <label key={option} className="mr-4 inline-flex gap-2"><input type="radio" name="pair" value={option} checked={answer === option} onChange={e => setAnswer(e.target.value)} />{option}</label>)}</fieldset> : <input aria-label="Your spelling" className="tool-input" autoComplete="off" autoCapitalize="off" spellCheck={false} value={answer} disabled={result !== null || studying} onChange={e => setAnswer(e.target.value)} />}
         {result === null ? <button className="tool-button" disabled={!answer.trim() || studying}>Check answer</button> : <div role="status"><p className="font-bold">{result ? "Correct!" : `The answer is ${target}.`}</p><p>{item.tip || item.spellingTip}</p><button type="button" className="tool-button" onClick={next}>Continue</button></div>}
       </form>}

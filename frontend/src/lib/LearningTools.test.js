@@ -5,6 +5,15 @@ import { scrambleWord, missingLetters, sampleRound } from "./arcadeChallenges";
 import { WORD_PAIRS, WORD_PARTS } from "@/data/wordGames";
 jest.mock("@/lib/api", () => ({ api: {} }));
 
+test('pack archives and restores sync by their latest timestamp without losing words', () => {
+  const original = { id: 'homework', title: 'Homework', words: ['bee', 'moon', 'star'], updatedAt: '2026-09-17T10:00:00Z' };
+  const archived = { ...original, archived: true, updatedAt: '2026-09-18T10:00:00Z' };
+  const restored = { ...archived, archived: false, updatedAt: '2026-09-18T11:00:00Z' };
+  const state = pack => ({ [KEYS.settings]: { personalPacks: [pack] } });
+  for (const [a, b] of [[original, archived], [archived, original]]) expect(mergeProgress(state(a), state(b))[KEYS.settings].personalPacks).toEqual([archived]);
+  for (const [a, b] of [[archived, restored], [restored, archived]]) expect(mergeProgress(state(a), state(b))[KEYS.settings].personalPacks).toEqual([restored]);
+});
+
 test("sync preserves independent packs and sentences and honours template deletion", () => {
   const remote = { [KEYS.settings]: {
     personalPacks: [{ id: 'remote', title: 'Cloud pack', words: ['bee'] }],

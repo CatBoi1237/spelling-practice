@@ -10,10 +10,18 @@ export default function PersonalPacks({ onPrint }) {
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const packs = settings.personalPacks || [];
+  const active = packs.filter(pack => !pack.archived);
+  const archived = packs.filter(pack => pack.archived);
   const reset = () => { setEditing(null); setTitle(""); setText(""); };
+  const setArchived = (id, value) => {
+    updateSettings({ personalPacks: packs.map(pack => pack.id === id ? { ...pack, archived: value, updatedAt: new Date().toISOString() } : pack) });
+    if (editing === id) reset();
+    toast.success(value ? "Pack archived. Its words and your progress are retained." : "Pack restored.");
+  };
   const save = e => {
     e.preventDefault();
     try {
+      if (editing && !active.some(pack => pack.id === editing)) throw new Error("This pack is no longer active. Restore it before editing.");
       const data = validatePersonalPack(title, text);
       const pack = { ...data, id: editing || crypto.randomUUID(), updatedAt: new Date().toISOString() };
       updateSettings({ personalPacks: editing ? packs.map(p => p.id === editing ? pack : p) : [...packs, pack] });
@@ -42,12 +50,15 @@ export default function PersonalPacks({ onPrint }) {
       {editing && <button type="button" className="tool-button" onClick={reset}>Cancel editing</button>}
       <label className="block">Import a SpellBee pack (JSON)<input className="tool-input" type="file" accept=".json,application/json" onChange={importFile} /></label>
     </form>
-    {packs.map(p => <article className="tool-card" key={p.id}>
+    <p>{active.length} active pack{active.length === 1 ? "" : "s"}. Archive finished homework to tidy your choices; restore it whenever you need it. Word progress and existing practice links are kept.</p>
+    {active.map(p => <article className="tool-card" key={p.id}>
       <h3 className="text-xl font-bold">{p.title}</h3><p>{p.words.length} words</p>
       <Link className="tool-button" to={`/practice?mode=personal&pack=${encodeURIComponent(p.id)}&difficulty=mixed`}>Practise</Link>
       <button className="tool-button" onClick={() => { setEditing(p.id); setTitle(p.title); setText(p.words.join("\n")); }}>Edit pack</button>
       <button className="tool-button" onClick={() => downloadText("spellbee-pack.json", JSON.stringify({ format: "spellbee-pack", version: 1, title: p.title, words: p.words }, null, 2), "application/json")}>Export pack</button>
       <button className="tool-button" onClick={() => onPrint(p.id)}>Print or download</button>
+      <button className="tool-button" aria-label={`Archive ${p.title}`} onClick={() => setArchived(p.id, true)}>Archive pack</button>
     </article>)}
+    {!!archived.length && <details className="tool-card"><summary>Archived packs ({archived.length})</summary><div className="space-y-3">{archived.map(pack => <article key={pack.id}><h3 className="font-bold">{pack.title}</h3><p>{pack.words.length} words retained</p><button className="tool-button" onClick={() => setArchived(pack.id, false)}>Restore {pack.title}</button></article>)}</div></details>}
   </div>;
 }

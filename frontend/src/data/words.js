@@ -61,7 +61,7 @@ export const DIFFICULTY_META = {
 
 export const WORD_MAP = new Map(WORDS.map((w) => [w.word.toLowerCase(), w]));
 
-export const CATEGORIES = ["Science", "Literature", "Geography", "Animals", "Technology", "Medicine", "History", "Everyday English", "Academic", "Competition", "Civics"];
+export const CATEGORIES = ["Science", "Literature", "Geography", "Animals", "Technology", "Medicine", "History", "Everyday English", "Academic", "Competition", "Civics", "Arts"];
 
 export const PATTERN_META = {
   "double-consonant": "Double consonants",

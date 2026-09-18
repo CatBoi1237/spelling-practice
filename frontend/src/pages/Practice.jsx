@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { PATTERN_META } from "@/data/words";
+import { completedQuestRound } from "@/lib/learningTools";
 import { useApp } from "@/context/AppContext";
 import { speak, speakSequence, cancelSpeech, isSpeechSupported, playTone } from "@/lib/speech";
 import { recordWordAttempt, appendHistory, getHistory, countMastered } from "@/lib/storage";
@@ -25,7 +26,7 @@ export default function Practice() {
 function Session() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const { settings, updateStats } = useApp();
+  const { settings, updateStats, updateSettings } = useApp();
   const { playerId, playerName } = useAuth();
 
   const modeId = params.get("mode") || "classic";
@@ -223,7 +224,9 @@ function Session() {
       avgTime: s.times.length ? s.times.reduce((a, b) => a + b, 0) / s.times.length : 0,
       durationMs: Date.now() - s.startTime,
     };
-    appendHistory({ date: summary.date, mode: summary.mode, difficulty: summary.difficulty, correct: s.correct.length, incorrect: s.incorrect.length, bestStreak: s.bestStreak, avgTime: summary.avgTime, points: s.points });
+    const questComplete = completedQuestRound({ mode: mode.id, topic, focus, total, queueLength: queue.length });
+    if (questComplete) updateSettings({ questCompletions: { ...(settings.questCompletions || {}), [topic]: true } });
+    appendHistory({ topic, completed: questComplete, date: summary.date, mode: summary.mode, difficulty: summary.difficulty, correct: s.correct.length, incorrect: s.incorrect.length, bestStreak: s.bestStreak, avgTime: summary.avgTime, points: s.points });
     updateStats((prev) => ({
       ...prev,
       sessions: (prev.sessions || 0) + 1,

@@ -111,7 +111,7 @@ assert.equal(weekStart(new Date('2026-09-21T00:00:00Z')), '2026-09-21');
 assert.ok(!redactWord('The BEE is a bee.', 'bee').toLowerCase().includes('bee'));
 assert.ok(csv([['=SUM(A1)', 'He said "hello"']]).includes("'=SUM(A1)"));
 const search = wordSearch(TOPIC_PACKS[0].words);
-for (const p of search.placements) assert.equal(search.grid[p.row].slice(p.col, p.col + p.word.length).join(''), p.word);
+for (const p of search.placements) assert.equal([...p.word].map((_, i) => search.grid[p.row + p.dr * i][p.col + p.dc * i]).join(''), p.word);
 values.set('sb.settings.v1', JSON.stringify({ personalPacks: [{ id: 'test', title: 'Homework', words: ['bee', 'mynewword', 'rocket'] }] }));
 const personalQueue = run('personal', { pack: 'test' }).queue;
 assert.equal(personalQueue.length, 3);

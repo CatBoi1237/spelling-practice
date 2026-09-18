@@ -1,7 +1,8 @@
 import { mergeProgress } from "./sync";
 import { KEYS } from "./storage";
 import { importPersonalPack, validatePersonalPack, wordSearch, completedQuestRound, sessionsCsv, sentencesCsv } from "./learningTools";
-import { scrambleWord, missingLetters } from "./arcadeChallenges";
+import { scrambleWord, missingLetters, sampleRound } from "./arcadeChallenges";
+import { WORD_PAIRS, WORD_PARTS } from "@/data/wordGames";
 jest.mock("@/lib/api", () => ({ api: {} }));
 
 test("sync preserves independent packs and sentences and honours template deletion", () => {
@@ -67,4 +68,34 @@ test('progress exports include meaningful totals and quote spreadsheet formulas 
   const sentences = sentencesCsv([{ date: '2026-09-18', word: 'bee', sentence: '=HYPERLINK("bad")' }]);
   expect(sentences).toContain("'=HYPERLINK");
   expect(sentences).toContain('""bad""');
+});
+
+test('expanded exercises have clear prompts, unique choices and valid answers', () => {
+  expect(WORD_PAIRS).toHaveLength(24);
+  expect(WORD_PARTS).toHaveLength(24);
+  expect(new Set(WORD_PAIRS.map(item => item.sentence)).size).toBe(24);
+  expect(new Set(WORD_PARTS.map(item => item.answer)).size).toBe(24);
+  for (const item of WORD_PAIRS) {
+    expect(item.sentence).toContain('_____');
+    expect(item.options).toContain(item.answer);
+    expect(new Set(item.options).size).toBe(item.options.length);
+    expect(item.tip.length).toBeGreaterThan(20);
+  }
+  for (const item of WORD_PARTS) {
+    expect(['prefix', 'suffix']).toContain(item.position);
+    expect(item.base && item.part && item.answer && item.tip).toBeTruthy();
+    if (item.position === 'prefix') expect(item.answer).toBe(item.part + item.base);
+  }
+});
+
+test('round sampling varies question order without mutating the exercise bank', () => {
+  const before = JSON.stringify(WORD_PAIRS);
+  const first = sampleRound(WORD_PAIRS, 10, () => 0.999);
+  const next = sampleRound(WORD_PAIRS, 10, () => 0);
+  expect(first).toHaveLength(10);
+  expect(new Set(first).size).toBe(10);
+  expect(next).not.toEqual(first);
+  expect(JSON.stringify(WORD_PAIRS)).toBe(before);
+  expect(sampleRound([], 10)).toEqual([]);
+  expect(sampleRound([1, 2], 10)).toHaveLength(2);
 });

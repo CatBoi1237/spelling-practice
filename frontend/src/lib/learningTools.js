@@ -1,5 +1,5 @@
 import { WORD_MAP } from "@/data/words";
-import { getSettings, saveSettings, getWordStats, getHistory } from "@/lib/storage";
+import { getSettings, saveSettings, getWordStats, getHistory, getPracticeDays } from "@/lib/storage";
 
 export function localDay(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -61,11 +61,12 @@ export function sentencesCsv(journal = getSettings().sentenceJournal || []) {
 }
 export function calendarDays(now = new Date()) {
   const counts = {};
+  const practiced = new Set(getPracticeDays());
   getHistory().forEach(s => {
     const date = new Date(s.date);
     if (!Number.isNaN(date.getTime())) { const key = localDay(date); counts[key] = (counts[key] || 0) + 1; }
   });
-  return Array.from({ length: 28 }, (_, i) => { const d = new Date(now); d.setDate(d.getDate() - 27 + i); const day = localDay(d); return { day, count: counts[day] || 0 }; });
+  return Array.from({ length: 28 }, (_, i) => { const d = new Date(now); d.setDate(d.getDate() - 27 + i); const day = localDay(d); return { day, count: counts[day] || 0, practiced: practiced.has(day) }; });
 }
 export function savePersonalPack(title, text) {
   const words = parsePersonalWords(text);

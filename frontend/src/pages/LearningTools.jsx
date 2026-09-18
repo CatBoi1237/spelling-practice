@@ -2,9 +2,10 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { TOPIC_PACKS } from "@/data/words";
-import { getHistory, getWordStats, isMastered, getMissed } from "@/lib/storage";
+import { getHistory, getWordStats, isMastered, getMissed, getPracticeDays } from "@/lib/storage";
 import { useApp } from "@/context/AppContext";
 import { calendarDays, wordObject, wordSearch, progressCsv, sessionsCsv, sentencesCsv, downloadText, localDay } from "@/lib/learningTools";
+import { practiceStreak } from "@/lib/progressArchive";
 import PersonalPacks from "@/components/PersonalPacks";
 import { scrambleWord } from "@/lib/arcadeChallenges";
 import { downloadOfflinePack } from "@/lib/offlinePack";
@@ -18,7 +19,7 @@ export default function LearningTools() {
   const packs = [...TOPIC_PACKS, ...personal.map(p => ({ ...p, words: p.words.map(wordObject) }))];
   const pack = packs.find(p => p.id === selected) || packs[0];
   const stats = useMemo(() => getWordStats(), []), history = useMemo(() => getHistory(), []);
-  const days = useMemo(() => calendarDays(), []), active = days.slice(-7).filter(d => d.count).length;
+  const days = useMemo(() => calendarDays(), []), active = days.slice(-7).filter(d => d.practiced).length;
   const missed = useMemo(() => getMissed().slice(0, 5), []);
   const puzzle = useMemo(() => wordSearch(pack.words), [pack]);
   const current = pack.words[sentenceIndex % pack.words.length];
@@ -28,8 +29,8 @@ export default function LearningTools() {
   return <div className="space-y-6 learning-tools"><header className="no-print"><h1 className="text-4xl font-black">Your learning workshop</h1><p className="mt-3">Plan, create and explore. Your normal practice contributes to your progress here.</p></header>
     <nav aria-label="Learning tools" className="no-print flex flex-wrap gap-2">{[["plan", "Coach & calendar"], ["quests", "Spelling quests"], ["packs", "Personal packs"], ["print", "Worksheets & offline"], ["sentences", "Sentence builder"]].map(([id, label]) => <button key={id} className="tool-button" aria-pressed={tab === id} onClick={() => setTab(id)}>{label}</button>)}</nav>
     {tab === "plan" && <>
-      <section className="tool-card"><h2 className="text-2xl font-bold">Your week</h2><p>{weekly.length} sessions · {total ? Math.round(correct / total * 100) : 0}% accuracy · {active} practice days in the last seven days</p><label>Weekly goal <select className="tool-input" value={settings.weeklyGoal || 3} onChange={e => updateSettings({ weeklyGoal: Number(e.target.value) })}>{[1, 2, 3, 4, 5, 6, 7].map(n => <option key={n} value={n}>{n} days</option>)}</select></label><p>{active >= (settings.weeklyGoal || 3) ? "Weekly goal reached!" : `${(settings.weeklyGoal || 3) - active} more practice days to reach your goal.`}</p>
-        <div className="my-4 grid grid-cols-7 gap-2">{days.map(d => <div title={`${d.day}: ${d.count} sessions`} className={`rounded-lg p-2 text-center text-xs ${d.count ? "bg-emerald-700 text-white" : "bg-slate-800 text-slate-300"}`} key={d.day}>{d.day.slice(8)}<br />{d.count ? "✓" : "—"}</div>)}</div><p className="text-sm">The last 28 days; ticks mark completed sessions.</p>
+      <section className="tool-card"><h2 className="text-2xl font-bold">Your week</h2><p>{weekly.length} sessions · {total ? Math.round(correct / total * 100) : 0}% accuracy · {active} practice days in the last seven days</p><p>{practiceStreak(getPracticeDays())} day practice streak · Complete a round today to keep it growing.</p><label>Weekly goal <select className="tool-input" value={settings.weeklyGoal || 3} onChange={e => updateSettings({ weeklyGoal: Number(e.target.value) })}>{[1, 2, 3, 4, 5, 6, 7].map(n => <option key={n} value={n}>{n} days</option>)}</select></label><p>{active >= (settings.weeklyGoal || 3) ? "Weekly goal reached!" : `${(settings.weeklyGoal || 3) - active} more practice days to reach your goal.`}</p>
+        <div className="my-4 grid grid-cols-7 gap-2">{days.map(d => <div title={`${d.day}: ${d.count ? `${d.count} recent sessions` : d.practiced ? "Practice recorded" : "No practice recorded"}`} className={`rounded-lg p-2 text-center text-xs ${d.practiced ? "bg-emerald-700 text-white" : "bg-slate-800 text-slate-300"}`} key={d.day}>{d.day.slice(8)}<br />{d.practiced ? "✓" : "—"}</div>)}</div><p className="text-sm">The last 28 days; ticks mark completed sessions.</p>
         <button className="tool-button" onClick={() => downloadText("spellbee-word-progress.csv", progressCsv(), "text/csv")}>Export word progress CSV</button><button className="tool-button" onClick={() => downloadText("spellbee-sessions.csv", sessionsCsv(), "text/csv")}>Export recent sessions CSV</button><p className="text-sm">Session exports include your most recent 100 rounds.</p>
       </section>
       <section className="tool-card"><h2 className="text-2xl font-bold">A short practice plan</h2><ol className="my-3 list-decimal space-y-3 pl-5"><li><Link to="/practice?mode=smart&difficulty=adaptive">Start with Smart Practice</Link> to work on your current level.</li><li><Link to="/practice?mode=mistakes&difficulty=mixed">Revisit tricky spellings</Link>{missed.length ? `: ${missed.map(w => w.word).join(", ")}.` : " after you have some mistakes to learn from."}</li><li><Link to="/arcade?game=detective">Try a short Word Detective quiz</Link> to check what has stuck.</li></ol><p>Try these on separate days. The plan adapts to the mistakes recorded in your practice.</p></section>

@@ -30,7 +30,7 @@ jobs:
       - name: Test practice modes
         run: node --experimental-vm-modules ../scripts/test-practice-modes.mjs
       - name: Test arcade interactions
-        run: yarn test --watchAll=false --runInBand --testPathPattern='(Arcade|LearningTools|OfflinePractice).test'
+        run: yarn test --watchAll=false --runInBand --testPathPattern='(Arcade|LearningTools|OfflinePractice|AssignmentTemplates).test'
       - name: Build frontend
         run: yarn build
 

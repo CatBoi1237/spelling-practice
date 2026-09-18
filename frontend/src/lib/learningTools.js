@@ -9,8 +9,25 @@ export function weekStart(date = new Date()) {
   d.setUTCDate(d.getUTCDate() - (d.getUTCDay() + 6) % 7);
   return d.toISOString().slice(0, 10);
 }
-export function parsePersonalWords(text) {
-  return [...new Set(text.toLowerCase().split(/[\s,;]+/).map(w => w.replace(/^[^a-z]+|[^a-z]+$/g, "")).filter(w => /^[a-z]+(?:['-][a-z]+)*$/.test(w)))].slice(0, 50);
+export function parsePersonalWords(text, limit = 50) {
+  return [...new Set(text.toLowerCase().split(/[\s,;]+/).map(w => w.replace(/^[^a-z]+|[^a-z]+$/g, "")).filter(w => /^[a-z]+(?:['-][a-z]+)*$/.test(w)))].slice(0, limit);
+}
+export function validatePersonalPack(title, text) {
+  if (typeof title !== "string" || typeof text !== "string") throw new Error("A pack needs a title and spelling words.");
+  const words = parsePersonalWords(text, 51);
+  if (!title.trim() || words.length < 3) throw new Error("Add a title and at least three different words.");
+  if (words.length > 50) throw new Error("A pack can contain up to 50 unique words. Split this list into smaller packs.");
+  if (words.some(w => w.length > 60)) throw new Error("Each spelling word must be 60 letters or fewer.");
+  return { title: title.trim().slice(0, 80), words };
+}
+export function importPersonalPack(json) {
+  let pack;
+  try { pack = JSON.parse(json); } catch { throw new Error("Choose a valid SpellBee JSON pack file."); }
+  if (pack?.format !== "spellbee-pack" || pack.version !== 1 || !Array.isArray(pack.words) || pack.words.length > 50 || !pack.words.every(w => typeof w === "string" && /^[a-z]+(?:['-][a-z]+)*$/i.test(w))) throw new Error("This file is not a supported SpellBee word pack.");
+  return validatePersonalPack(pack.title, pack.words.join("\n"));
+}
+export function completedQuestRound({ mode, topic, focus, total, queueLength }) {
+  return mode === "topic" && Boolean(topic) && !focus && queueLength > 0 && total >= queueLength;
 }
 export function wordObject(word) {
   return WORD_MAP.get(word.toLowerCase()) || { word, difficulty: "custom", definition: "Your custom spelling word.", example: "", spellingTip: "Break the word into smaller chunks and check each one.", patterns: [] };
@@ -50,13 +67,25 @@ export function savePersonalPack(title, text) {
   return pack;
 }
 export function wordSearch(words, size = 18) {
-  const selected = words.map(w => w.word.toUpperCase()).filter(w => /^[A-Z]+$/.test(w) && w.length <= size).slice(0, 12);
+  const selected = [...new Set(words.map(w => w.word.toUpperCase()))].filter(w => /^[A-Z]+$/.test(w) && w.length <= size).slice(0, Math.min(12, size));
   const grid = Array.from({ length: size }, () => Array(size).fill(""));
   const placements = [];
+  const directions = [[0, 1, "right"], [1, 0, "down"], [1, 1, "diagonally down-right"], [0, -1, "left"], [-1, 0, "up"], [-1, -1, "diagonally up-left"]];
   selected.forEach((word, i) => {
-    const row = i, col = (i * 3) % (size - word.length + 1);
-    [...word].forEach((letter, j) => { grid[row][col + j] = letter; });
-    placements.push({ word, row, col });
+    for (let d = 0; d < directions.length; d++) {
+      const [dr, dc, direction] = directions[(i + d) % directions.length];
+      for (let n = 0; n < size * size; n++) {
+        const cell = (n + i * 37) % (size * size), row = Math.floor(cell / size), col = cell % size;
+        const fits = [...word].every((letter, j) => {
+          const r = row + dr * j, c = col + dc * j;
+          return r >= 0 && r < size && c >= 0 && c < size && (!grid[r][c] || grid[r][c] === letter);
+        });
+        if (!fits) continue;
+        [...word].forEach((letter, j) => { grid[row + dr * j][col + dc * j] = letter; });
+        placements.push({ word, row, col, dr, dc, direction });
+        return;
+      }
+    }
   });
   grid.forEach((row, r) => row.forEach((cell, c) => { if (!cell) row[c] = String.fromCharCode(65 + ((r * 7 + c * 11 + 3) % 26)); }));
   return { grid, placements };

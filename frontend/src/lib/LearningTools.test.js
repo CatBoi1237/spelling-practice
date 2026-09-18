@@ -1,5 +1,7 @@
 import { mergeProgress } from "./sync";
 import { KEYS } from "./storage";
+import { importPersonalPack, validatePersonalPack, wordSearch, completedQuestRound } from "./learningTools";
+import { scrambleWord, missingLetters } from "./arcadeChallenges";
 jest.mock("@/lib/api", () => ({ api: {} }));
 
 test("sync preserves independent packs and sentences and honours template deletion", () => {
@@ -19,4 +21,42 @@ test("sync preserves independent packs and sentences and honours template deleti
   expect(merged.assignmentTemplates.teacher).toHaveLength(1);
   expect(merged.assignmentTemplates.teacher[0].deleted).toBe(true);
   expect(mergeProgress(remote, local)[KEYS.settings].assignmentTemplates.teacher[0].deleted).toBe(true);
+});
+
+test("pack import validates its format and creates only editable word data", () => {
+  const data = importPersonalPack(JSON.stringify({ format: 'spellbee-pack', version: 1, id: 'foreign-id', title: ' Space ', words: ['planet', 'rocket', 'moon'] }));
+  expect(data).toEqual({ title: 'Space', words: ['planet', 'rocket', 'moon'] });
+  expect(() => importPersonalPack('{')).toThrow();
+  expect(() => importPersonalPack(JSON.stringify({ format: 'spellbee-pack', version: 1, title: 'Bad', words: ['valid', {}, 'moon'] }))).toThrow();
+  expect(() => validatePersonalPack('Too many', Array.from({ length: 51 }, (_, i) => `word${String.fromCharCode(97 + Math.floor(i / 26))}${String.fromCharCode(97 + i % 26)}`).join(' '))).toThrow('50');
+});
+
+test("puzzle answers match all placements, including non-horizontal words", () => {
+  const words = ['planet', 'rocket', 'garden', 'flower', 'school', 'cloud', 'bee'].map(word => ({ word }));
+  const puzzle = wordSearch(words);
+  expect(puzzle.placements).toHaveLength(words.length);
+  expect(puzzle.placements.some(p => p.dr !== 0)).toBe(true);
+  for (const p of puzzle.placements) expect([...p.word].map((_, i) => puzzle.grid[p.row + p.dr * i][p.col + p.dc * i]).join('')).toBe(p.word);
+  expect(wordSearch(words)).toEqual(puzzle);
+  expect(wordSearch([{ word: 'unplaceablylongword' }], 3).placements).toHaveLength(0);
+});
+
+test("game clues preserve letters and hide some spelling", () => {
+  for (const word of ['planet', 'bee', 'letter', 'a-b', 'book']) {
+    expect([...scrambleWord(word)].sort()).toEqual([...word].sort());
+    expect(scrambleWord(word)).not.toBe(word);
+  }
+  expect(missingLetters('planet')).toBe('p _ a _ e _');
+});
+
+test("quests only count full topic rounds and sync retains all earned completions", () => {
+  const round = { mode: 'topic', topic: 'garden', total: 12, queueLength: 12 };
+  expect(completedQuestRound(round)).toBe(true);
+  expect(completedQuestRound({ ...round, total: 3 })).toBe(false);
+  expect(completedQuestRound({ ...round, focus: 'missed' })).toBe(false);
+  expect(completedQuestRound({ ...round, mode: 'classic' })).toBe(false);
+  const local = { [KEYS.settings]: { questCompletions: { garden: true } } };
+  const remote = { [KEYS.settings]: { questCompletions: { space: true, garden: false } } };
+  expect(mergeProgress(local, remote)[KEYS.settings].questCompletions).toEqual({ garden: true, space: true });
+  expect(mergeProgress(remote, local)[KEYS.settings].questCompletions).toEqual({ garden: true, space: true });
 });

@@ -55,12 +55,36 @@ test("choosing a word pair does not count as spelling mastery", () => {
   expect(host.textContent).toContain('The children packed');
   expect(host.querySelector('input:checked')).toBeNull();
 });
+test.each(['scramble', 'missing'])("%s accepts the complete spelling and records a round", game => {
+  render(`/arcade?game=${game}&level=grade5`);
+  expect(host.textContent).not.toContain('planet');
+  enter('planet'); submit(); click('Continue');
+  expect(getHistory()[0].mode).toBe(`arcade-${game}`);
+  expect(getHistory()[0].timingVersion).toBe(2);
+  expect(getHistory()[0].avgTime).toBeGreaterThan(0);
+  expect(getWordStats().planet.correct).toBe(1);
+});
+test("memory study time is excluded and the word is covered before answering", () => {
+  const now = jest.spyOn(Date, 'now'); now.mockReturnValue(1000);
+  render('/arcade?game=memory&level=grade5');
+  expect(host.textContent).toContain('planet');
+  expect(host.querySelector('input').disabled).toBe(true);
+  now.mockReturnValue(31000); click('Cover word');
+  expect(host.textContent).not.toContain('planet');
+  enter('planet'); now.mockReturnValue(33000); submit();
+  now.mockReturnValue(63000); click('Continue');
+  expect(getHistory()[0].avgTime).toBe(2);
+  now.mockRestore();
+});
 test("flight can pause, skip and clean up without duplicate completions", () => {
   jest.useFakeTimers();
   const raf = jest.spyOn(window, 'requestAnimationFrame').mockImplementation(fn => setTimeout(() => fn(Date.now()), 16));
   const cancel = jest.spyOn(window, 'cancelAnimationFrame').mockImplementation(id => clearTimeout(id));
   const finished = jest.fn();
   act(() => root.render(<FlappyFlight onFinish={finished} />));
+  act(() => jest.advanceTimersByTime(5000));
+  expect(finished).not.toHaveBeenCalled();
+  click('Start flight');
   click('Pause');
   act(() => jest.advanceTimersByTime(5000));
   expect(finished).not.toHaveBeenCalled();

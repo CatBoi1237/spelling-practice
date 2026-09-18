@@ -104,6 +104,7 @@ export function mergeProgress(local, remote) {
     ...remoteSettings, ...localSettings,
     personalPacks: mergeItems(remoteSettings.personalPacks, localSettings.personalPacks),
     sentenceJournal: mergeItems(remoteSettings.sentenceJournal, localSettings.sentenceJournal).slice(-100),
+    questCompletions: Object.fromEntries([...Object.entries(remoteSettings.questCompletions || {}), ...Object.entries(localSettings.questCompletions || {})].filter(([, value]) => value === true)),
     assignmentTemplates,
   };
   mergeTeacherLists(out, local, remote);

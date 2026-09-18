@@ -1,6 +1,7 @@
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import Arcade from "./Arcade";
+import { WORD_PAIRS } from "@/data/wordGames";
 import FlappyFlight from "@/components/FlappyFlight";
 import { getHistory, getWordStats } from "@/lib/storage";
 
@@ -18,8 +19,8 @@ jest.mock("@/data/words", () => ({
   WORD_MAP: new Map(),
 }));
 let host, root;
-beforeEach(() => { localStorage.clear(); host = document.createElement("div"); document.body.append(host); root = createRoot(host); });
-afterEach(() => { act(() => root.unmount()); host.remove(); });
+beforeEach(() => { jest.spyOn(Math, 'random').mockReturnValue(0.999); localStorage.clear(); host = document.createElement("div"); document.body.append(host); root = createRoot(host); });
+afterEach(() => { act(() => root.unmount()); host.remove(); jest.restoreAllMocks(); });
 function render(url) { mockSearch = url.split('?')[1] || ''; act(() => root.render(<Arcade />)); }
 function click(text) { const button = [...host.querySelectorAll("button")].find(b => b.textContent.includes(text)); act(() => button.click()); }
 function enter(text) { const input = host.querySelector('input'); act(() => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, text); input.dispatchEvent(new Event('input', { bubbles: true })); }); }
@@ -54,6 +55,22 @@ test("choosing a word pair does not count as spelling mastery", () => {
   click('Continue');
   expect(host.textContent).toContain('The children packed');
   expect(host.querySelector('input:checked')).toBeNull();
+});
+test('pair rounds finish after ten questions and replay starts a fresh round', () => {
+  render('/arcade?game=pairs');
+  for (const question of WORD_PAIRS.slice(0, 10)) {
+    act(() => [...host.querySelectorAll('input[type="radio"]')].find(input => input.value === question.answer).click());
+    submit(); click('Continue');
+  }
+  expect(host.textContent).toContain('Round complete');
+  expect(getHistory()).toHaveLength(1);
+  expect(getHistory()[0].correct).toBe(10);
+  Math.random.mockReturnValue(0);
+  click('Play another round');
+  expect(host.textContent).toContain('Word 1/10');
+  expect(host.textContent).not.toContain('Please put your bag over');
+  expect(host.querySelector('input:checked')).toBeNull();
+  expect(getHistory()).toHaveLength(1);
 });
 test.each(['scramble', 'missing'])("%s accepts the complete spelling and records a round", game => {
   render(`/arcade?game=${game}&level=grade5`);

@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { WORDS_BY_DIFFICULTY, DIFFICULTY_META } from "@/data/words";
 import { WORD_PAIRS, WORD_PARTS } from "@/data/wordGames";
 import { useApp } from "@/context/AppContext";
-import { recordWordAttempt, appendHistory, getHistory } from "@/lib/storage";
+import { recordWordAttempt, appendHistory, getArcadeRecords } from "@/lib/storage";
 import { redactWord } from "@/lib/learningTools";
 import { speak, cancelSpeech } from "@/lib/speech";
 import { scrambleWord, missingLetters, spellingSeconds } from "@/lib/arcadeChallenges";
@@ -42,19 +42,17 @@ function Round({ game, level }) {
   const item = questions[index];
   const target = item?.answer || item?.word;
   const label = GAMES.find(([id]) => id === game)[1];
-  const best = useMemo(() => Math.max(0, ...getHistory().filter(h => h.mode === `arcade-${game}` && h.difficulty === level).map(h => h.points || 0)), [game, level]);
-  const bestAccuracy = useMemo(() => Math.max(0, ...getHistory().filter(h => h.mode === `arcade-${game}` && h.difficulty === level && h.correct + h.incorrect === questions.length).map(h => Math.round(h.correct / questions.length * 100))), [game, level, questions.length]);
-  const bestSpeed = useMemo(() => {
-    const eligible = getHistory().filter(h => h.mode === `arcade-${game}` && h.difficulty === level && h.timingVersion === 2 && h.correct === questions.length && h.incorrect === 0 && Number.isFinite(h.avgTime) && h.avgTime > 0);
-    return eligible.length ? Math.min(...eligible.map(h => h.avgTime)) : null;
-  }, [game, level, questions.length]);
+  const previousRecord = useMemo(() => getArcadeRecords()[`arcade-${game}:${level}`], [game, level]);
+  const best = previousRecord?.points || 0;
+  const bestAccuracy = previousRecord?.rounds?.[questions.length]?.accuracy || 0;
+  const bestSpeed = previousRecord?.rounds?.[questions.length]?.perfectSeconds ?? null;
   useEffect(() => () => cancelSpeech(), []);
   const flightEnd = useCallback(safe => { if (!safe) setLives(v => Math.max(0, v - 1)); answerStarted.current = Date.now(); setPhase("spell"); }, []);
   const finish = nextRows => {
     if (submitted.current) return; submitted.current = true;
     const correct = nextRows.filter(r => r.right).map(r => ({ word: r.word }));
     const incorrect = nextRows.filter(r => !r.right).map(r => ({ word: r.word }));
-    appendHistory({ date: new Date().toISOString(), mode: `arcade-${game}`, modeLabel: label, difficulty: level, correct: correct.length, incorrect: incorrect.length, points: correct.length * 100, total: nextRows.length, accuracy: Math.round(correct.length / Math.max(1, nextRows.length) * 100), timingVersion: 2, avgTime: nextRows.reduce((sum, r) => sum + r.seconds, 0) / Math.max(1, nextRows.length) });
+    appendHistory({ date: new Date().toISOString(), mode: `arcade-${game}`, modeLabel: label, difficulty: level, correct: correct.length, incorrect: incorrect.length, points: correct.length * 100, total: nextRows.length, accuracy: Math.round(correct.length / Math.max(1, nextRows.length) * 100), roundLength: questions.length, timingVersion: 2, avgTime: nextRows.reduce((sum, r) => sum + r.seconds, 0) / Math.max(1, nextRows.length) });
     updateStats(prev => ({ ...prev, sessions: prev.sessions + 1 })); refresh(); setDone(true);
   };
   const check = e => {

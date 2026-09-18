@@ -1,6 +1,7 @@
 // Cloud sync for signed-in users: merge local + remote progress, then push.
 import { api } from "@/lib/api";
 import { KEYS, exportAll } from "@/lib/storage";
+import { mergePracticeDays, daysFromHistory, mergeArcadeRecords, recordsFromHistory } from "@/lib/progressArchive";
 
 const LAST_SYNC = "sb.lastSync.v1";
 
@@ -55,6 +56,8 @@ export function mergeProgress(local, remote) {
   const hist = new Map();
   [...(remote[KEYS.history] || []), ...(local[KEYS.history] || [])].forEach((h) => hist.set(h.date, h));
   out[KEYS.history] = [...hist.values()].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 100);
+  out[KEYS.practiceDays] = mergePracticeDays(local[KEYS.practiceDays] || [], remote[KEYS.practiceDays] || [], daysFromHistory([...hist.values()]));
+  out[KEYS.arcadeRecords] = mergeArcadeRecords(local[KEYS.arcadeRecords], remote[KEYS.arcadeRecords], recordsFromHistory([...hist.values()]));
 
   const ws = { ...(remote[KEYS.wordStats] || {}) };
   Object.entries(local[KEYS.wordStats] || {}).forEach(([word, l]) => {

@@ -1,9 +1,12 @@
 // localStorage-backed persistence for progress + settings.
+import { mergePracticeDays, daysFromHistory, mergeArcadeRecords, recordsFromHistory } from "@/lib/progressArchive";
 
 export const KEYS = {
   settings: "sb.settings.v1",
   stats: "sb.stats.v1",
   history: "sb.history.v1",
+  practiceDays: "sb.practiceDays.v1",
+  arcadeRecords: "sb.arcadeRecords.v1",
   missed: "sb.missed.v1",
   theme: "sb.theme.v1",
   wordStats: "sb.wordstats.v1",
@@ -95,7 +98,15 @@ export function getHistory() {
 export function appendHistory(session) {
   const list = getHistory();
   list.unshift(session);
+  write(KEYS.practiceDays, mergePracticeDays(readRaw(KEYS.practiceDays, []), daysFromHistory(list)));
+  write(KEYS.arcadeRecords, mergeArcadeRecords(readRaw(KEYS.arcadeRecords, {}), recordsFromHistory(list)));
   write(KEYS.history, list.slice(0, 100));
+}
+export function getPracticeDays() {
+  return mergePracticeDays(readRaw(KEYS.practiceDays, []), daysFromHistory(getHistory()));
+}
+export function getArcadeRecords() {
+  return mergeArcadeRecords(readRaw(KEYS.arcadeRecords, {}), recordsFromHistory(getHistory()));
 }
 
 // ---------- per-word statistics (mistake learning system) ----------

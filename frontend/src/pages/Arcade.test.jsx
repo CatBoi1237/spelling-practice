@@ -1,25 +1,27 @@
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
+import { speak } from "@/lib/speech";
 import Arcade from "./Arcade";
 import { WORD_PAIRS } from "@/data/wordGames";
 import FlappyFlight from "@/components/FlappyFlight";
 import { getHistory, getWordStats } from "@/lib/storage";
 
 global.IS_REACT_ACT_ENVIRONMENT = true;
+let mockSettings = { reducedMotion: true };
 let mockSearch = '';
 jest.mock('react-router-dom', () => ({
   useSearchParams: () => [new URLSearchParams(mockSearch)],
   Link: ({ to, children, ...props }) => <a href={to} {...props}>{children}</a>,
 }), { virtual: true });
-jest.mock("@/context/AppContext", () => ({ useApp: () => ({ settings: { reducedMotion: true }, updateStats: jest.fn(), refresh: jest.fn() }) }));
-jest.mock("@/lib/speech", () => ({ speak: jest.fn(), cancelSpeech: jest.fn() }));
+jest.mock("@/context/AppContext", () => ({ useApp: () => ({ settings: mockSettings, updateStats: jest.fn(), refresh: jest.fn() }) }));
+jest.mock("@/lib/speech", () => ({ speak: jest.fn(), cancelSpeech: jest.fn(), isSpeechSupported: () => true }));
 jest.mock("@/data/words", () => ({
   WORDS_BY_DIFFICULTY: { grade5: [{ word: "planet", definition: "A world travelling around a star.", spellingTip: "One n." }] },
   DIFFICULTY_META: { grade5: { label: "Very Easy" } },
   WORD_MAP: new Map(),
 }));
 let host, root;
-beforeEach(() => { jest.spyOn(Math, 'random').mockReturnValue(0.999); localStorage.clear(); host = document.createElement("div"); document.body.append(host); root = createRoot(host); });
+beforeEach(() => { mockSettings = { reducedMotion: true }; jest.clearAllMocks(); jest.spyOn(Math, 'random').mockReturnValue(0.999); localStorage.clear(); host = document.createElement("div"); document.body.append(host); root = createRoot(host); });
 afterEach(() => { act(() => root.unmount()); host.remove(); jest.restoreAllMocks(); });
 function render(url) { mockSearch = url.split('?')[1] || ''; act(() => root.render(<Arcade />)); }
 function click(text) { const button = [...host.querySelectorAll("button")].find(b => b.textContent.includes(text)); act(() => button.click()); }
@@ -46,6 +48,18 @@ test("reduced-motion Flappy Bee starts with spelling and supports correction", (
   click('Continue');
   expect(getWordStats().planet.incorrect).toBe(1);
   expect(getHistory()[0].correct).toBe(0);
+});
+test('Flappy audio starts after flight, while autoplay-off waits for a click', () => {
+  mockSettings = { reducedMotion: false, autoPlay: true };
+  render('/arcade?game=flappy&level=grade5');
+  expect(speak).not.toHaveBeenCalled(); click('Skip flight');
+  expect(speak).toHaveBeenLastCalledWith('planet', expect.any(Object));
+});
+test('Flappy respects disabled autoplay and still offers manual speech', () => {
+  mockSettings = { reducedMotion: true, autoPlay: false };
+  render('/arcade?game=flappy&level=grade5');
+  expect(speak).not.toHaveBeenCalled(); click('Hear word');
+  expect(speak).toHaveBeenLastCalledWith('planet', expect.any(Object));
 });
 test("choosing a word pair does not count as spelling mastery", () => {
   render('/arcade?game=pairs');

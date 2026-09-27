@@ -10,6 +10,9 @@ import { scrambleWord, missingLetters, spellingSeconds, sampleRound } from "@/li
 import ArcadeAudio from "@/components/ArcadeAudio";
 import FlappyFlight from "@/components/FlappyFlight";
 
+import ExtraArcade from "@/components/arcade/ExtraArcade";
+import { EXTRA_GAMES } from "@/data/arcadePuzzles";
+
 const GAMES = [
   ["scramble", "Word Scramble", "Rearrange mixed-up letters using a meaning clue, then spell the whole word."],
   ["missing", "Missing Letters", "Restore the missing letters and type the complete spelling."],
@@ -24,11 +27,14 @@ export default function Arcade() {
   const [level, setLevel] = useState("grade5");
   const [round, setRound] = useState(0);
   const game = params.get("game");
+  if (EXTRA_GAMES.some(item => item.id === game)) return <ExtraArcade key={`${game}:${params.get("level")}:${round}`} onReplay={() => setRound(value => value + 1)} game={game} level={params.get("level") || "grade5"} />;
   if (GAMES.some(([id]) => id === game)) return <Round key={`${game}:${params.get("level")}:${round}`} onReplay={() => setRound(value => value + 1)} game={game} level={params.get("level") || "grade5"} />;
-  return <div className="space-y-6"><h1 className="text-4xl font-black">Spelling Arcade</h1><p>Play, learn and beat your personal best. Spelling answers count towards word mastery.</p>
+  return <div className="space-y-6"><h1 className="text-4xl font-black">Spelling Arcade</h1><p>Play solo, solve puzzles or share a device for a team spelling game. Full spelling answers in solo games count towards word mastery.</p>
     <label>Word level <select className="tool-input" value={level} onChange={e => setLevel(e.target.value)}>{Object.entries(DIFFICULTY_META).map(([id, meta]) => <option key={id} value={id}>{meta.label}</option>)}</select></label>
     <div className="grid gap-4 sm:grid-cols-2">{GAMES.map(([id, title, description]) => <article className="tool-card" key={id}><h2 className="text-xl font-bold">{title}</h2><p className="my-3">{description}</p><Link className="tool-button" to={`/arcade?game=${id}&level=${level}`}>Play {title}</Link></article>)}</div>
-    <p>Confusing Pairs has {WORD_PAIRS.length} exercises and Prefix &amp; Suffix Lab has {WORD_PARTS.length}. Each round draws ten mixed-level questions. The word level applies to the other games.</p>
+    <h2 className="text-2xl font-bold">More spelling games</h2>
+    <div className="grid gap-4 sm:grid-cols-2">{EXTRA_GAMES.map(item => <article className="tool-card" key={item.id}><h3 className="text-xl font-bold">{item.title}</h3><p className="my-3">{item.description}</p><p className="mb-3 text-sm">{item.party ? "Shared device · host or teams" : "Solo practice"} · {item.level ? "Uses your selected word level" : "Curated mixed-level puzzles"}</p><Link className="tool-button" to={`/arcade?game=${item.id}&level=${level}`}>Play {item.title}</Link></article>)}</div>
+    <p>Confusing Pairs has {WORD_PAIRS.length} exercises and Prefix &amp; Suffix Lab has {WORD_PARTS.length}. Each round draws ten mixed-level questions. The word level applies to games marked as using your selected level, plus the original spelling games above.</p>
     <Link className="tool-button" to="/learning-tools">Quests, calendar and learning tools →</Link>
   </div>;
 }

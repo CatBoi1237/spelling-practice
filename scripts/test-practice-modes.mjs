@@ -121,3 +121,43 @@ const weeklyA = run('weekly', { difficulty: 'grade5' }).queue.map(w => w.word);
 assert.deepEqual(run('weekly', { difficulty: 'grade5' }).queue.map(w => w.word), weeklyA);
 assert.equal(new Set(weeklyA).size, 10);
 console.log('Learning tools, personal packs and weekly selection checks passed.');
+
+const puzzleData = await load(path.join(root, 'data/arcadePuzzles.js'));
+await puzzleData.link(() => { throw new Error('Puzzle data must be standalone'); }); await puzzleData.evaluate();
+const puzzleRules = await load(path.join(root, 'lib/arcadePuzzles.js'));
+await puzzleRules.link(() => { throw new Error('Puzzle rules must be standalone'); }); await puzzleRules.evaluate();
+const { LADDERS, LADDER_WORDS, GRID_LETTERS, GRID_WORDS, CATEGORY_ROUNDS, RHYMES, EXTRA_GAMES } = puzzleData.namespace;
+const { oneLetterApart, ladderRoute, gridPath, bingoLine, searchSelection, hangmanState } = puzzleRules.namespace;
+assert.equal(new Set(EXTRA_GAMES.map(game => game.id)).size, 11);
+for (const ladder of LADDERS) {
+  for (let i = 1; i < ladder.length; i++) assert.ok(oneLetterApart(ladder[i - 1], ladder[i]), `${ladder[i - 1]} -> ${ladder[i]}`);
+  assert.equal(ladderRoute(ladder[0], ladder.at(-1), LADDER_WORDS).at(-1), ladder.at(-1));
+}
+assert.equal(gridPath([...GRID_LETTERS], 'catac'), null, 'Grid paths cannot reuse tiles');
+assert.equal(gridPath([...GRID_LETTERS], 'cl'), null, 'Grid paths cannot jump tiles');
+const gridSolutions = GRID_WORDS.filter(word => word.length >= 3 && gridPath([...GRID_LETTERS], word));
+assert.ok(gridSolutions.length >= 20);
+for (const word of gridSolutions) {
+  const cells = gridPath([...GRID_LETTERS], word);
+  assert.equal(new Set(cells).size, word.length);
+  assert.equal(cells.map(cell => GRID_LETTERS[cell]).join(''), word);
+}
+for (const round of CATEGORY_ROUNDS) for (const list of Object.values(round.groups)) {
+  assert.ok(list.length >= 8); assert.ok(list.every(word => word.startsWith(round.letter)));
+  assert.equal(new Set(list).size, list.length);
+}
+assert.equal(new Set(RHYMES.map(item => item.word)).size, RHYMES.length);
+assert.ok(hangmanState('letter', ['l', 'e', 't', 'r']).won);
+assert.equal(bingoLine([0, 1, 3]), null);
+assert.ok(bingoLine([0, 4, 8]));
+for (const level of DIFFICULTY_LEVEL_IDS) {
+  const eligible = WORDS.filter(word => word.difficulty === level && /^[a-z]+$/.test(word.word));
+  assert.ok(eligible.length >= 9, `Bingo needs nine words for ${level}`);
+  const puzzle = wordSearch(eligible.filter(word => word.word.length <= 10).slice(0, 6), 10);
+  assert.ok(puzzle.placements.length >= 3, `Word search needs usable words for ${level}`);
+  for (const p of puzzle.placements) {
+    const start = p.row * 10 + p.col, end = (p.row + p.dr * (p.word.length - 1)) * 10 + p.col + p.dc * (p.word.length - 1);
+    assert.equal(searchSelection(puzzle.placements, end, start, 10).word, p.word);
+  }
+}
+console.log(`Eleven new game checks passed; ${gridSolutions.length} connected grid words and ${LADDERS.length} solvable ladders.`);

@@ -31,13 +31,20 @@ function submit() { act(() => host.querySelector('form').dispatchEvent(new Event
 test("detective records one attempt and a numeric history summary", () => {
   render('/arcade?game=detective&level=grade5');
   expect(host.textContent).not.toContain('planet');
-  enter('planet'); submit(); submit();
+  expect(document.activeElement).toBe(host.querySelector('input'));
+  enter('planet');
+  expect(document.activeElement).toBe(host.querySelector('input'));
+  submit(); submit();
+  expect(document.activeElement.textContent).toBe('Continue');
   expect(getWordStats().planet.attempts).toBe(1);
   expect(host.textContent).toContain('Correct!');
   click('Continue');
   expect(host.textContent).toContain('Round complete');
   expect(getHistory()[0].correct).toBe(1);
   expect(getHistory()[0].incorrect).toBe(0);
+  expect(document.activeElement).toBe(host.querySelector('h2'));
+  click('Play another round');
+  expect(document.activeElement).toBe(host.querySelector('input'));
 });
 test("reduced-motion Flappy Bee starts with spelling and supports correction", () => {
   render('/arcade?game=flappy&level=grade5');
@@ -54,6 +61,7 @@ test('Flappy audio starts after flight, while autoplay-off waits for a click', (
   render('/arcade?game=flappy&level=grade5');
   expect(speak).not.toHaveBeenCalled(); click('Skip flight');
   expect(speak).toHaveBeenLastCalledWith('planet', expect.any(Object));
+  expect(document.activeElement).toBe(host.querySelector('input'));
 });
 test('Flappy respects disabled autoplay and still offers manual speech', () => {
   mockSettings = { reducedMotion: true, autoPlay: false };
@@ -63,11 +71,13 @@ test('Flappy respects disabled autoplay and still offers manual speech', () => {
 });
 test("choosing a word pair does not count as spelling mastery", () => {
   render('/arcade?game=pairs');
+  expect(document.activeElement).toBe(host.querySelector('input[type="radio"]'));
   act(() => host.querySelector('input[value="there"]').click()); submit();
   expect(host.textContent).toContain('Correct!');
   expect(getWordStats().there).toBeUndefined();
   click('Continue');
   expect(host.textContent).toContain('The children packed');
+  expect(document.activeElement).toBe(host.querySelector('input[type="radio"]'));
   expect(host.querySelector('input:checked')).toBeNull();
 });
 test('pair rounds finish after ten questions and replay starts a fresh round', () => {
@@ -100,7 +110,9 @@ test("memory study time is excluded and the word is covered before answering", (
   render('/arcade?game=memory&level=grade5');
   expect(host.textContent).toContain('planet');
   expect(host.querySelector('input').disabled).toBe(true);
+  expect(document.activeElement.textContent).toBe('Cover word and spell');
   now.mockReturnValue(31000); click('Cover word');
+  expect(document.activeElement).toBe(host.querySelector('input'));
   expect(host.textContent).not.toContain('planet');
   enter('planet'); now.mockReturnValue(33000); submit();
   now.mockReturnValue(63000); click('Continue');
@@ -113,16 +125,35 @@ test("flight can pause, skip and clean up without duplicate completions", () => 
   const cancel = jest.spyOn(window, 'cancelAnimationFrame').mockImplementation(id => clearTimeout(id));
   const finished = jest.fn();
   act(() => root.render(<FlappyFlight onFinish={finished} />));
+  expect(document.activeElement.textContent).toBe('Start flight');
   act(() => jest.advanceTimersByTime(5000));
   expect(finished).not.toHaveBeenCalled();
   click('Start flight');
-  click('Pause');
+  const flightArea = host.querySelector('button[aria-label^="Flight area"]');
+  expect(document.activeElement).toBe(flightArea);
+  act(() => flightArea.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+  expect(document.activeElement.textContent).toBe('Resume');
   act(() => jest.advanceTimersByTime(5000));
   expect(finished).not.toHaveBeenCalled();
+  click('Resume');
+  expect(document.activeElement).toBe(flightArea);
+  click('Pause');
+  expect(document.activeElement.textContent).toBe('Resume');
   click('Skip flight');
   act(() => jest.advanceTimersByTime(5000));
   expect(finished).toHaveBeenCalledTimes(1);
   expect(finished).toHaveBeenCalledWith(true);
   act(() => root.unmount()); root = createRoot(host);
   raf.mockRestore(); cancel.mockRestore(); jest.useRealTimers();
+});
+
+test("starting after a hidden tab clears the pre-flight pause", () => {
+  const hidden = jest.spyOn(document, 'hidden', 'get').mockReturnValue(true);
+  act(() => root.render(<FlappyFlight onFinish={jest.fn()} />));
+  act(() => document.dispatchEvent(new Event('visibilitychange')));
+  hidden.mockReturnValue(false);
+  act(() => document.dispatchEvent(new Event('visibilitychange')));
+  click('Start flight');
+  expect([...host.querySelectorAll('button')].some(button => button.textContent === 'Pause')).toBe(true);
+  expect(document.activeElement).toBe(host.querySelector('button[aria-label^="Flight area"]'));
 });

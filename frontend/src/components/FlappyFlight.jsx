@@ -6,6 +6,10 @@ export default function FlappyFlight({ onFinish }) {
   const [paused, setPaused] = useState(false);
   const [ready, setReady] = useState(false);
   const area = useRef(null);
+  const flightControl = useRef(null);
+  useEffect(() => {
+    if (!ready || paused) flightControl.current?.focus();
+  }, [ready, paused]);
   const done = useRef(false);
   const flap = () => { if (!done.current && ready && !paused) state.current.velocity = -180; };
   useEffect(() => {
@@ -29,8 +33,8 @@ export default function FlappyFlight({ onFinish }) {
     return () => cancelAnimationFrame(request);
   }, [paused, ready, onFinish]);
   return <div className="space-y-3">
-    <p>Wider gates and a longer flight give you more space between words. Tap or press Space to flap. Start each flight when you are ready.</p>
-    <button ref={area} type="button" aria-label="Flight area: press Space or tap to flap" onPointerDown={e => { e.preventDefault(); flap(); }} onKeyDown={e => { if (e.code === "Space" || e.code === "ArrowUp") { e.preventDefault(); flap(); } }} className="block w-full touch-none overflow-hidden rounded-2xl border-2 border-amber-400 focus:outline focus:outline-4 focus:outline-white">
+    <p>Wider gates and a longer flight give you more space between words. Tap or press Space or Arrow Up to flap. Press Escape to pause. Start each flight when you are ready.</p>
+    <button ref={area} type="button" aria-label="Flight area: press Space or Arrow Up to flap, Escape to pause" onPointerDown={e => { e.preventDefault(); flap(); }} onKeyDown={e => { if (e.key === "Escape" && ready) { e.preventDefault(); setPaused(true); } else if (e.code === "Space" || e.code === "ArrowUp") { e.preventDefault(); flap(); } }} className="block w-full touch-none overflow-hidden rounded-2xl border-2 border-amber-400 focus:outline focus:outline-4 focus:outline-white">
       <svg viewBox="0 0 480 300" className="w-full" role="img" aria-label="Bee flying through a garden gate">
         <rect width="480" height="300" fill="#0c4a6e" />
         <circle cx="390" cy="48" r="27" fill="#fde68a" />
@@ -44,7 +48,7 @@ export default function FlappyFlight({ onFinish }) {
         {(!ready || paused) && <text x="240" y="150" textAnchor="middle" fill="white" fontSize="24">{ready ? "Paused" : "Ready when you are"}</text>}
       </svg>
     </button>
-    <button className="tool-button" onClick={() => { if (!ready) { setReady(true); state.current.velocity = -100; } else setPaused(!paused); area.current?.focus(); }}>{!ready ? "Start flight" : paused ? "Resume" : "Pause"}</button>
+    <button ref={flightControl} className="tool-button" onClick={() => { if (!ready) { setPaused(false); setReady(true); state.current.velocity = -100; } else setPaused(!paused); area.current?.focus(); }}>{!ready ? "Start flight" : paused ? "Resume" : "Pause"}</button>
     <button className="tool-button" onClick={() => { if (!done.current) { done.current = true; onFinish(true); } }}>Skip flight · spelling only</button>
   </div>;
 }

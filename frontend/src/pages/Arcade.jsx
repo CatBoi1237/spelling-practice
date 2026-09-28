@@ -22,6 +22,18 @@ const GAMES = [
   ["pairs", "Confusing Pairs", "Choose the right word for each sentence."],
   ["parts", "Prefix & Suffix Lab", "Build words and discover how their meanings change."],
 ];
+const GAME_CATEGORIES = [
+  { id: "spelling", title: "Spelling practice", description: "Build confidence with letters and spelling from memory.", games: ["scramble", "missing", "memory"] },
+  { id: "puzzles", title: "Word puzzles", description: "Find hidden words, connect letters and solve spelling puzzles.", games: ["hangman", "code", "ladder", "hive", "grid", "search"] },
+  { id: "language", title: "Meaning & language", description: "Explore clues, rhymes, word families and commonly confused words.", games: ["detective", "clues", "pairs", "parts", "categories", "rhyme"] },
+  { id: "action", title: "Listening & action", description: "Listen, spell and play at your own pace or against the clock.", games: ["flappy", "clock", "bingo"] },
+  { id: "together", title: "Play together", description: "Share a device for a friendly spelling bee or team challenge.", games: ["bee", "relay"] },
+];
+const GAME_CATALOG = new Map([
+  ...GAMES.map(([id, title, description]) => ({ id, title, description, level: !["pairs", "parts"].includes(id) })),
+  ...EXTRA_GAMES,
+].map(item => [item.id, item]));
+
 export default function Arcade() {
   const [params] = useSearchParams();
   const [level, setLevel] = useState("grade5");
@@ -31,10 +43,15 @@ export default function Arcade() {
   if (GAMES.some(([id]) => id === game)) return <Round key={`${game}:${params.get("level")}:${round}`} onReplay={() => setRound(value => value + 1)} game={game} level={params.get("level") || "grade5"} />;
   return <div className="space-y-6"><h1 className="text-4xl font-black">Spelling Arcade</h1><p>Play solo, solve puzzles or share a device for a team spelling game. Full spelling answers in solo games count towards word mastery.</p>
     <label>Word level <select className="tool-input" value={level} onChange={e => setLevel(e.target.value)}>{Object.entries(DIFFICULTY_META).map(([id, meta]) => <option key={id} value={id}>{meta.label}</option>)}</select></label>
-    <div className="grid gap-4 sm:grid-cols-2">{GAMES.map(([id, title, description]) => <article className="tool-card" key={id}><h2 className="text-xl font-bold">{title}</h2><p className="my-3">{description}</p><Link className="tool-button" to={`/arcade?game=${id}&level=${level}`}>Play {title}</Link></article>)}</div>
-    <h2 className="text-2xl font-bold">More spelling games</h2>
-    <div className="grid gap-4 sm:grid-cols-2">{EXTRA_GAMES.map(item => <article className="tool-card" key={item.id}><h3 className="text-xl font-bold">{item.title}</h3><p className="my-3">{item.description}</p><p className="mb-3 text-sm">{item.party ? "Shared device · host or teams" : "Solo practice"} · {item.level ? "Uses your selected word level" : "Curated mixed-level puzzles"}</p><Link className="tool-button" to={`/arcade?game=${item.id}&level=${level}`}>Play {item.title}</Link></article>)}</div>
-    <p>Confusing Pairs has {WORD_PAIRS.length} exercises and Prefix &amp; Suffix Lab has {WORD_PARTS.length}. Each round draws ten mixed-level questions. The word level applies to games marked as using your selected level, plus the original spelling games above.</p>
+    <nav aria-label="Game categories" className="flex flex-wrap gap-2">{GAME_CATEGORIES.map(category => <a key={category.id} className="tool-button" href={`#arcade-${category.id}`}>{category.title}</a>)}</nav>
+    {GAME_CATEGORIES.map(category => <section key={category.id} id={`arcade-${category.id}`} aria-labelledby={`arcade-${category.id}-title`} className="space-y-4 scroll-mt-24">
+      <div><h2 id={`arcade-${category.id}-title`} className="text-2xl font-bold">{category.title}</h2><p className="mt-1">{category.description}</p></div>
+      <div className="grid gap-4 sm:grid-cols-2">{category.games.map(id => {
+        const item = GAME_CATALOG.get(id);
+        return <article className="tool-card" key={id}><h3 className="text-xl font-bold">{item.title}</h3><p className="my-3">{item.description}</p><p className="mb-3 text-sm">{item.party ? "Shared device · host or teams" : "Solo practice"} · {item.level ? "Uses your selected word level" : "Curated mixed-level puzzles"}</p><Link className="tool-button" to={`/arcade?game=${id}&level=${level}`}>Play {item.title}</Link></article>;
+      })}</div>
+    </section>)}
+    <p>Confusing Pairs has {WORD_PAIRS.length} exercises and Prefix &amp; Suffix Lab has {WORD_PARTS.length}. Each round draws ten mixed-level questions. The word level applies to games marked as using your selected level.</p>
     <Link className="tool-button" to="/learning-tools">Quests, calendar and learning tools →</Link>
   </div>;
 }
@@ -101,3 +118,4 @@ function Round({ game, level, onReplay }) {
     </>}
   </div>;
 }
+

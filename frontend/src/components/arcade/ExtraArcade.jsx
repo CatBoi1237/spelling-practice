@@ -9,7 +9,9 @@ import { BeatClock, GuessWord, Hangman } from './SoloWordGames';
 import { Categories, InteractiveSearch, LetterGrid, RhymeTime, WordBingo, WordLadder } from './PuzzleGames';
 import { SpellingRelay, SpokenBee } from './PartyGames';
 
-const COMPONENTS = { hangman: Hangman, ladder: WordLadder, grid: LetterGrid, categories: Categories, bingo: WordBingo, rhyme: RhymeTime, search: InteractiveSearch, clock: BeatClock, clues: GuessWord, bee: SpokenBee, relay: SpellingRelay };
+import { WordCode, LetterHive } from './LetterGames';
+
+const COMPONENTS = { code: WordCode, hive: LetterHive, hangman: Hangman, ladder: WordLadder, grid: LetterGrid, categories: Categories, bingo: WordBingo, rhyme: RhymeTime, search: InteractiveSearch, clock: BeatClock, clues: GuessWord, bee: SpokenBee, relay: SpellingRelay };
 
 export default function ExtraArcade({ game, level, onReplay }) {
   const { settings, updateStats, refresh } = useApp();

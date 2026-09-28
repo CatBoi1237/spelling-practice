@@ -6,6 +6,8 @@ import { bingoLine, gridPath, hangmanState, ladderRoute, oneLetterApart, searchS
 import { CATEGORY_ROUNDS, GRID_LETTERS, GRID_WORDS, LADDERS, LADDER_WORDS, RHYMES } from '@/data/arcadePuzzles';
 import { wordSearch } from '@/lib/learningTools';
 import { WORDS_BY_DIFFICULTY } from '@/data/words';
+import { CODE_WORDS, CODE_GUESSES, HIVES } from '@/data/letterPuzzles';
+import { codeFeedback, hivePoints, checkHiveWord } from '@/lib/letterPuzzles';
 
 global.IS_REACT_ACT_ENVIRONMENT = true;
 let mockSearch = '';
@@ -136,4 +138,58 @@ test('relay alternates teams, corrects wrong letters and retains team results on
   }
   expect(host.textContent).toContain('Team A: 2 points'); expect(host.textContent).toContain('Team B: 3 points');
   expect(getHistory()).toHaveLength(0); expect(mockUpdateStats).not.toHaveBeenCalled();
+});
+
+test('word code reserves exact matches and never over-credits repeated letters', () => {
+  expect(codeFeedback('apple', 'allee')).toEqual(['correct', 'misplaced', 'absent', 'absent', 'correct']);
+  expect(codeFeedback('sheep', 'eerie')).toEqual(['misplaced', 'misplaced', 'absent', 'absent', 'absent']);
+  expect(codeFeedback('apple', 'apple')).toEqual(Array(5).fill('correct'));
+  for (const { word } of CODE_WORDS) {
+    expect(CODE_GUESSES).toContain(word);
+    for (const guess of CODE_GUESSES) {
+      const feedback = codeFeedback(word, guess);
+      for (const letter of new Set(guess)) expect([...guess].filter((char, i) => char === letter && feedback[i] !== 'absent').length).toBeLessThanOrEqual([...word].filter(char => char === letter).length);
+    }
+  }
+});
+test('word code rejects invalid and duplicate guesses, supports a clue, and saves one win', () => {
+  render('code'); answer('zzzzz'); expect(host.textContent).toContain('6 guesses remaining');
+  answer('train'); answer('train'); expect(host.textContent).toContain('already tried'); expect(host.textContent).toContain('5 guesses remaining');
+  click('Show meaning clue'); expect(host.textContent).toContain('A crisp fruit');
+  answer('apple'); expect(host.textContent).toContain('Solved!'); click('Finish word code');
+  expect(getHistory()[0]).toMatchObject({ correct: 1, points: 500, mode: 'arcade-code' }); expect(getWordStats().apple).toBeUndefined();
+  click('Play another round'); expect(host.textContent).toContain('6 guesses remaining'); expect(getHistory()).toHaveLength(1);
+});
+test('word code reveals the answer after six unsuccessful guesses', () => {
+  render('code'); for (const word of ['train', 'water', 'beach', 'brain', 'chair', 'cloud']) answer(word);
+  expect(host.textContent).toContain('Out of guesses. The word is apple'); expect(host.querySelector('input').disabled).toBe(true);
+  click('Finish word code'); expect(getHistory()[0]).toMatchObject({ incorrect: 1, points: 0 });
+});
+test('every hive has unique legal words, definitions and a pangram', () => {
+  for (const puzzle of HIVES) {
+    expect(new Set(puzzle.letters).size).toBe(7); expect(new Set(puzzle.words.map(item => item.word)).size).toBe(puzzle.words.length);
+    expect(puzzle.words.some(item => puzzle.letters.every(letter => item.word.includes(letter)))).toBe(true);
+    for (const item of puzzle.words) { expect(checkHiveWord(item.word, puzzle, [])).toBeNull(); expect(item.clue).toBeTruthy(); }
+  }
+  expect(hivePoints('pale', HIVES[0].letters)).toBe(1); expect(hivePoints('planets', HIVES[0].letters)).toBe(14);
+});
+test('hive validates centre, letters, dictionary and duplicates without adding points', () => {
+  render('hive'); answer('cat'); expect(host.textContent).toContain('at least four');
+  answer('sleep'); expect(host.textContent).toContain('centre letter A');
+  answer('rain'); expect(host.textContent).toContain('only the seven');
+  answer('aaaa'); expect(host.textContent).toContain('curated word list');
+  answer('planets'); expect(host.textContent).toContain('Pangram!'); answer('planets'); expect(host.textContent).toContain('already found');
+  click('Give me a clue'); expect(host.textContent).toContain('Clue: A world that orbits a star.');
+  click('Shuffle letters'); expect(host.textContent).toContain('1/32 words found');
+  click('Finish and review hive'); expect(getHistory()[0]).toMatchObject({ correct: 1, points: 14, mode: 'arcade-hive' });
+  expect(getWordStats().planets).toBeUndefined(); expect(host.textContent).toContain('Worlds that orbit a star.');
+});
+test('hive letter buttons build a spelling and restore keyboard focus', () => {
+  render('hive');
+  for (const letter of 'plate') {
+    const label = letter === 'a' ? 'Add required centre letter A' : `Add ${letter.toUpperCase()}`;
+    act(() => host.querySelector(`button[aria-label="${label}"]`).click());
+  }
+  expect(host.querySelector('input').value).toBe('plate'); expect(document.activeElement).toBe(host.querySelector('input'));
+  submit(); expect(host.textContent).toContain('A flat dish for serving food. +5 points.');
 });

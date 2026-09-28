@@ -1,4 +1,6 @@
 export const EXTRA_GAMES = [
+  { id: 'code', title: 'Word Code', description: 'Crack a five-letter spelling in six guesses with precise letter-position feedback.' },
+  { id: 'hive', title: 'Letter Hive', description: 'Build words around a required centre letter. Find pangrams and learn meanings with clues.' },
   { id: 'hangman', title: 'Hangman', description: 'Use a meaning clue and letter guesses to uncover a word before six misses.', level: true },
   { id: 'ladder', title: 'Word Ladder', description: 'Change one letter at a time to connect two words. Hints help you find a route.' },
   { id: 'grid', title: 'Letter Grid', description: 'A Boggle-style hunt: spell words using neighbouring letters without reusing a tile.' },

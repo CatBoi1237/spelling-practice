@@ -128,7 +128,7 @@ const puzzleRules = await load(path.join(root, 'lib/arcadePuzzles.js'));
 await puzzleRules.link(() => { throw new Error('Puzzle rules must be standalone'); }); await puzzleRules.evaluate();
 const { LADDERS, LADDER_WORDS, GRID_LETTERS, GRID_WORDS, CATEGORY_ROUNDS, RHYMES, EXTRA_GAMES } = puzzleData.namespace;
 const { oneLetterApart, ladderRoute, gridPath, bingoLine, searchSelection, hangmanState } = puzzleRules.namespace;
-assert.equal(new Set(EXTRA_GAMES.map(game => game.id)).size, 11);
+assert.equal(new Set(EXTRA_GAMES.map(game => game.id)).size, 13);
 for (const ladder of LADDERS) {
   for (let i = 1; i < ladder.length; i++) assert.ok(oneLetterApart(ladder[i - 1], ladder[i]), `${ladder[i - 1]} -> ${ladder[i]}`);
   assert.equal(ladderRoute(ladder[0], ladder.at(-1), LADDER_WORDS).at(-1), ladder.at(-1));
@@ -160,4 +160,28 @@ for (const level of DIFFICULTY_LEVEL_IDS) {
     assert.equal(searchSelection(puzzle.placements, end, start, 10).word, p.word);
   }
 }
-console.log(`Eleven new game checks passed; ${gridSolutions.length} connected grid words and ${LADDERS.length} solvable ladders.`);
+console.log(`Arcade puzzle checks passed; ${gridSolutions.length} connected grid words and ${LADDERS.length} solvable ladders.`);
+
+const letterData = await load(path.join(root, 'data/letterPuzzles.js'));
+await letterData.link(() => { throw new Error('Letter data must be standalone'); }); await letterData.evaluate();
+const letterRules = await load(path.join(root, 'lib/letterPuzzles.js'));
+await letterRules.link(() => { throw new Error('Letter rules must be standalone'); }); await letterRules.evaluate();
+const { CODE_WORDS, CODE_GUESSES, HIVES } = letterData.namespace;
+const { codeFeedback, checkHiveWord, hivePoints } = letterRules.namespace;
+assert.equal(CODE_WORDS.length, 20);
+for (const item of CODE_WORDS) {
+  assert.ok(CODE_GUESSES.includes(item.word)); assert.ok(item.clue);
+  for (const guess of CODE_GUESSES) {
+    assert.match(guess, /^[a-z]{5}$/);
+    const feedback = codeFeedback(item.word, guess);
+    for (const letter of new Set(guess)) assert.ok([...guess].filter((char, i) => char === letter && feedback[i] !== 'absent').length <= [...item.word].filter(char => char === letter).length);
+  }
+}
+for (const hive of HIVES) {
+  assert.equal(new Set(hive.letters).size, 7); assert.ok(hive.letters.includes(hive.centre));
+  assert.equal(new Set(hive.words.map(item => item.word)).size, hive.words.length);
+  assert.ok(hive.words.some(item => hive.letters.every(letter => item.word.includes(letter))));
+  for (const item of hive.words) { assert.equal(checkHiveWord(item.word, hive, []), null); assert.ok(item.clue); }
+}
+assert.equal(hivePoints('planets', HIVES[0].letters), 14);
+console.log(`Letter puzzles passed: ${CODE_WORDS.length} codes, ${HIVES.length} hives, ${HIVES.reduce((sum, hive) => sum + hive.words.length, 0)} word clues.`);
